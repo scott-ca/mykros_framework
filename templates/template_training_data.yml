@@ -1,0 +1,35 @@
+version: "3.1"
+
+nlu:
+
+- intent: check_spelling
+  examples: |
+    - Is [hapenning](misspelled_word) spelled correctly?
+    - Please check the spelling of [recieve](misspelled_word).
+    - Verify if [acomodate](misspelled_word) is spelled correctly.
+    - Can you confirm the spelling of [definately](misspelled_word)?
+    - I'm not sure if [existance](misspelled_word) is spelled right.
+    - Is [occurence](misspelled_word) spelled correctly?
+    - Please check if [recieve](misspelled_word) is spelled right.
+    - Verify the spelling of [seperate](misspelled_word).
+    - Can you confirm if [definately](misspelled_word) is spelled right?
+    - I'm not sure if [existance](misspelled_word) is spelled correctly.
+    - How do you spell [hapenning](misspelled_word)?
+    - What is the correct spelling of [recieve](misspelled_word)?
+    - Can you give me the proper spelling of [acomodate](misspelled_word)?
+    - How do you spell [definately](misspelled_word)?
+    - I'm unsure of the spelling of [existance](misspelled_word).
+    - Could you tell me the correct spelling of [occurence](misspelled_word)?
+    - What is the right way to spell [recieve](misspelled_word)?
+    - Could you clarify the spelling of [seperate](misspelled_word)?
+    - How do you spell [definately](misspelled_word) correctly?
+    - I'm not sure of the spelling of [existance](misspelled_word). Can you help?
+
+- regex: check_spelling_keywords
+  examples: |
+    - check|spelling|spell|spelled|misspelled
+
+- regex: misspelled_word
+  examples: |
+    - nonwords_flag
+

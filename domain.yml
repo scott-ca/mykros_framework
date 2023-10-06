@@ -1,0 +1,19 @@
+version: "3.1"
+
+intents:
+  - DEBUG_MODE
+  - example_mute_computer
+  - example_open_app
+
+actions:
+  - action_debug
+  - action_example_open_app
+  - action_example_mute_computer
+
+entities:
+  - example_open_app_id
+
+session_config:
+  session_expiration_time: 60
+  carry_over_slots_to_new_session: true
+

@@ -1,0 +1,4 @@
+conflict_groups:
+  - name: Template actions
+    intents:
+      - example

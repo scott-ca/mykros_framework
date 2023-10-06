@@ -1,0 +1,18 @@
+DEBUG_MODE:
+  action: action_debug
+  summary: Used to test or debug actions.
+  details: This intent is used to test or debug actions.
+  enabled: false
+
+example_mute_computer:
+  action: action_example_mute_computer
+  summary: This is an example intent.
+  details: This intent is used as an example and only displays a test message.
+  enabled: true
+
+example_open_app:
+  action: action_example_open_app
+  summary: This is another example intent.
+  details: This intent is used as an example and only displays a test message.
+  enabled: true
+

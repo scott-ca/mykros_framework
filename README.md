@@ -69,7 +69,7 @@ After setting up the environment, you'll need to train the model. This is a one-
 
 If you have Git installed, open a terminal or command prompt and execute the following command to clone the repository:
 ```
-git clone https://github.com/scott-ca/mykros_framework.git
+git clone https://github.com/scott-ca/mykros-framework.git
 cd mykros_framework
 ```
 Alternatively, you can manually download the files by clicking the "Code" button at the top right of the webpage and selecting "Download ZIP." Extract the downloaded ZIP file to your chosen directory. Open the command prompt or terminal in the extracted folder.
@@ -704,7 +704,7 @@ If you're solely utilizing the custom actions and any files mentioned above, you
 
 Mykros framework:
 ```
-https://github.com/scott-ca/mykros_framework/
+https://github.com/scott-ca/mykros/
 ```
 Mykros assist:
 ```

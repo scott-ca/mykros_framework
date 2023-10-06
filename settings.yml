@@ -1,0 +1,12 @@
+# Configuration settings
+
+# Confidence threshold for any intents to be considered present in the repsonse.
+confidence_threshold: 0.2
+
+# Keyword promity used for detecting multiple intents as well as nonwords.
+keyword_proximity: 5
+
+# Used to increase the confidence scores of intents based on the surrounding keywords for the respective intents.
+confidence_factors:
+  main_factor: 30
+  secondary_factor: 10

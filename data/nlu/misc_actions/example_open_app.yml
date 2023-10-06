@@ -1,0 +1,48 @@
+version: "3.1"
+
+nlu:
+
+- intent: example_open_app
+  examples: |
+    - Can you open some software for me?
+    - Open [Chrome](example_open_app_id).
+    - Open [Chrome](example_open_app_id) application.
+    - Launch [Notepad](example_open_app_id).
+    - Start [Firefox](example_open_app_id) application.
+    - Open [Word](example_open_app_id) program.
+    - Run [Excel](example_open_app_id).
+    - Start [PowerPoint application.
+    - Open the app [Photoshop](example_open_app_id).
+    - Launch [Visual Studio Code](example_open_app_id) program.
+    - Start [Calculator](example_open_app_id) app.
+    - Open [Zoom](example_open_app_id) software.
+    - Run [Skype](example_open_app_id).
+    - Launch the [Microsoft Teams](example_open_app_id) program.
+    - Open the app [Spotify](example_open_app_id).
+    - Start [Discord](example_open_app_id) software.
+    - Run [Steam](example_open_app_id).
+    - Can you please launch [Chrome](example_open_app_id)?
+    - Start the [Notepad](example_open_app_id) application.
+    - Bring up [Firefox](example_open_app_id).
+    - Initiate [Word](example_open_app_id) program.
+    - I'd like to start using [Excel](example_open_app_id).
+    - Can you open up [PowerPoint](example_open_app_id)?
+    - Launch the [Photoshop](example_open_app_id) app.
+    - I need to use [Visual Studio Code](example_open_app_id).
+    - Open [Calculator](example_open_app_id) for me.
+    - Start [Zoom](example_open_app_id) for my meeting.
+    - I need to call someone on [Skype](example_open_app_id).
+    - Can you bring up my [Microsoft Teams](example_open_app_id) program?
+    - I want to listen to [Spotify](example_open_app_id).
+    - Can you open [Discord](example_open_app_id) for me?
+    - I want to play a game on [Steam](example_open_app_id).
+    - Can you open [Steam])(example_open_app_id)
+
+- regex: example_open_app_keywords
+  examples: |
+    - open|launch|start|run|app|software|application|program
+
+- regex: example_open_app_id
+  examples: |
+    - nonwords_flag|Google|Facebook
+

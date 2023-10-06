@@ -1,0 +1,18 @@
+version: "3.1"
+
+nlu:
+
+- intent: example_mute_computer
+  examples: |
+    - mute the computer
+    - turn off sound
+    - mute
+    - can you mute my computer
+    - turn off the volume
+    - can you turn off the volume
+    - I want to mute the audio
+
+- regex: example_mute_computer_keywords
+  examples: |
+    - mute|volume
+

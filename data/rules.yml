@@ -1,0 +1,13 @@
+version: '3.1'
+
+rules:
+- rule: Example mute computer
+  steps:
+  - intent: example_mute_computer
+  - action: action_example_mute_computer
+
+- rule: Example open app
+  steps:
+  - intent: example_open_app
+  - action: action_example_open_app
+

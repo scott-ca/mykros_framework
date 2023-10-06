@@ -1,0 +1,10 @@
+version: '3.1'
+
+stories:
+- story: General Management
+  steps:
+  - intent: example_mute_computer
+  - action: action_example_mute_computer
+  - intent: example_open_app
+  - action: action_example_open_app
+

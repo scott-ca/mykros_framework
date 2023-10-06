@@ -1,0 +1,34 @@
+language: en
+pipeline:
+  - name: WhitespaceTokenizer
+    intent_tokenization_flag: True
+    token_pattern: (?u)\b\w+\b
+  - name: RegexFeaturizer
+  - name: LexicalSyntacticFeaturizer
+  - name: CountVectorsFeaturizer
+    analyzer: char_wb
+    min_ngram: 1
+    max_ngram: 4
+  - name: DIETClassifier
+    epochs: 100
+    model_confidence: softmax
+    constrain_similarities: true
+    model_confidence_threshold: 0.8
+    batch_strategy: balanced
+    batch_size: [64, 256]
+    ranking_length: 10
+    random_seed: 1
+  - name: EntitySynonymMapper
+  - name: RegexEntityExtractor
+  - name: FallbackClassifier
+    threshold: 0.3
+    ambiguity_threshold: 0.1
+  
+policies:
+  - name: MemoizationPolicy
+  - name: TEDPolicy
+    max_history: 1
+    epochs: 1
+  - name: RulePolicy
+
+assistant_id: mykros-framework
