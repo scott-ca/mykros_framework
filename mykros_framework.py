@@ -1,5 +1,5 @@
 import setproctitle
-setproctitle.setproctitle('Mykros assist')
+setproctitle.setproctitle('Mykros framework')
 from transformers import AutoTokenizer, AutoModel
 from PySide2.QtWidgets import QApplication, QMenu, QAction
 import logging

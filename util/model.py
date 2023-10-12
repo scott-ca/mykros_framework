@@ -35,6 +35,7 @@ class Model:
         message = message.replace('/', '__FSLASH__')
         message = message.replace('%', '__PERCENT__')
         message = message.replace('\\', '__BSLASH__')
+        message = message.replace('-', '__DASH__')
         message = message.strip()
         result = asyncio.run(self.agent.parse_message(message))
         return result

@@ -3,6 +3,14 @@
 &nbsp;
 &nbsp;
 
+# Table of contents
+* [Summary](#summary)
+* [Why choose the Mykros framework](#why-choose-the-mykros-framework)
+* [Installation instructions](#installation-instructions)
+* [Running Mykros](#running-mykros)
+* [Adding custom actions](#adding-custom-actions)
+* [License](#license)
+
 ## Summary
 
 Mykros is an open sourced AI assistant framework, offering compatibility with both Windows and Linux. Designed to streamline your daily workflow using natural language, and improving efficiency and productivity with your day-to-day tasks.
@@ -543,6 +551,35 @@ nlu:
 
 
 A sample yml file is in the template folder as well.
+
+### Placeholders for special characters
+Mykros supports 4 different placeholders for special characters that would otherwise be not supported. The placeholders are only needed in the training data. The user input, both entered and displayed, as well as processed by your custom action would directly use the special character.
+
+Mykros will automatically convert the user input to the placeholder, so that it matches the training data. In addition, the actual special character is only ever displayed to the end user and not the placeholder to avoid any confusion.
+
+```
+__FSLASH__ = /
+__PERCENT__ = %
+__BSLASH__ = \
+__DASH__ = -
+```
+
+These place holders are only needed in the training data. The user would input and any custom actions can use the special character directly.
+
+So for example, should you need to add:
+```
+"List the files at [C:\Users\Bill\](folder_query)"
+```
+You would instead add:
+```
+"List the files at [C:__BSLASH__Users__BSLASH__Bill__BSLASH__](folder_query)"
+```
+
+Please keep in mind, this is only needed for above special characters. The other special characters are natively supported. For example ":" doesn't require a placeholder.
+
+If you run into any other special characters not listed the cause issues please create an issue on the github page [here](https://github.com/scott-ca/mykros_framework/issues) listing the issue and I can create a placeholder for that special character.
+
+&nbsp;
 
 You may also include additional configuration options in the yml file shown below.
 

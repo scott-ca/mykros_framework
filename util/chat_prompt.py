@@ -191,7 +191,7 @@ class ChatPrompt(QLineEdit):
             print("\nNLU Data\n")
             print(nlu_data)
 
-            # Replaces the __FSLASH__,__BSLASH__,__PERCENT__ in the training data with forward slashes so that it can display correctly for the user in the output widget.
+            # Replaces the placeholders IE. __FSLASH__,__BSLASH__,__PERCENT__ in the training data with forward slashes so that it can display correctly for the user in the output widget.
             nlu_data = {key: replace_specialchar(value) for key, value in nlu_data.items()}
            
             # Prepare regex patterns for intent matching
@@ -215,7 +215,7 @@ class ChatPrompt(QLineEdit):
             logging.debug("intent ranking prior to conflict groups:")
             logging.debug(intents_above_threshold)
 
-        
+            
             # Read the YAML file for list of intents that may have a lot of overlap with intent detection.
             with open('conflict_groups.yml', 'r') as file:
                 config = yaml.safe_load(file)
@@ -330,19 +330,20 @@ class ChatPrompt(QLineEdit):
 
 def replace_specialchar(value):
     """
-    Replaces the '__FSLASH__' and '__PERCENT__' placeholders with their respective a given value.
+    Replaces the various placeholders such as '__FSLASH__' and '__BSLASH__' with their respective special characters.
 
     Args:
         value (str, list, dict): The value to process.
 
     Returns:
-        str, list, dict: The value with '__FSLASH__' '__PERCENT__' '__FSLASH__' placeholders replaced with their respective special characters.
+        str, list, dict: The value of respective special characters for the placeholders.
     """
 
     if isinstance(value, str):
         value = value.replace("__FSLASH__", "/")
         value = value.replace("__PERCENT__", "%")
         value = value.replace("__BSLASH__", "\\")
+        value = value.replace("__DASH__", "-")
         return value
     elif isinstance(value, list):
         return [replace_specialchar(item) for item in value]

@@ -74,6 +74,9 @@ def find_nonwords(user_input):
     words = user_input.split()
     nonwords = []
     for word in words:
+        # Skip the word "spellchecker" or "spellcheck"
+        if word.lower() == "spellchecker" or word.lower() == "spellcheck":
+            continue
         if not spell.correction(word) == word:
             nonwords.append(word)
     return nonwords
