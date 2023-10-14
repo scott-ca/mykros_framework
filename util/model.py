@@ -1,6 +1,10 @@
 import asyncio
 from rasa.shared.nlu.training_data.message import Message
 from rasa.core.agent import Agent
+import logging
+
+# Import translate_message from translator.py
+from util.translator import translate_message
 
 class Model:
     """
@@ -30,6 +34,13 @@ class Model:
         Returns:
             Message: The parsed result of the user message.
         """
+
+        if message.lower() not in ["yes", "no"]:
+            # Translate the message if needed
+            logging.debug(f"pre:translation {message}")
+            message = translate_message(message)
+            logging.debug(message)
+            logging.debug(f"post translation: {message}")
 
         # Replace symbols with their respective placeholders
         message = message.replace('/', '__FSLASH__')

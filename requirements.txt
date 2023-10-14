@@ -8,6 +8,7 @@ pyspellchecker==0.7.2
 safetensors==0.3.1
 transformers==4.31.0
 keyboard==0.13.5
+argostranslate==1.8.3
 
 winshell; sys_platform == 'win32'
 pywin32; sys_platform == 'win32'

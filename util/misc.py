@@ -10,9 +10,7 @@ def request_additional_info(chat_prompt, prompt_text=None):
 
     Args:
         chat_prompt (ChatPrompt): The ChatPrompt instance used for requesting additional input.
-        info_type (str): The type of information expected (e.g., 'file_name', 'url', 'timer').
         prompt_text (str, optional): The prompt text to display for the additional input. Defaults to None.
-        allow_any (str, optional): This allows the entity to be assigned any value. Defaults to False
 
     Returns:
         str: The additional information provided by the user.

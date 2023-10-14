@@ -13,9 +13,11 @@
 
 ## Summary
 
-Mykros is an open sourced AI assistant framework, offering compatibility with both Windows and Linux. Designed to streamline your daily workflow using natural language, and improving efficiency and productivity with your day-to-day tasks.
+Mykros is an open sourced portable AI assistant framework, offering compatibility with both Windows and Linux and can even be run directly from a USB drive. Designed to streamline your daily workflow using natural language, and improving efficiency and productivity with your day-to-day tasks.
 
-The Mykros framework utilizes the Rasa model for intent and entity detection while internalizing dialog and action management. By managing conversations and actions internally, Mykros eliminates the need for an external action server, reducing complexity, increasing flexibility and performance, and increasing accuracy while only needing small amounts of training data.
+The Mykros framework also provides the flexibility to interact with models using your native language even if the model was trained on data in another language. You are also able interact with custom actions that were created in another languages. 
+
+The Mykros framework utilizes the Rasa model for intent and entity detection while internalizing dialog and action management. By managing conversations and actions internally, Mykros eliminates the need for an external action server. This allows Mykros to reduce complexity, add functionality, increase flexibility and performance, and increase accuracy while only needing small amounts of training data.
 
 By combining the strengths of the Mykros framework and the lightweight Rasa model, Mykros delivers a powerful and modular user friendly AI assistant solution.
 
@@ -34,10 +36,21 @@ New technology and tools should be accessible to everyone. While typically most 
 
 Mykros is optimized for resource efficiency, requiring approximately 1GB of RAM and 3.5GB of diskspace. The model is also lightweight; even with 30 intents and their respective training data, the model size remains under 40 MB. The model has been designed to run efficiently even on devices without a dedicated GPU, making it a good option even for lower-end hardware configurations and running along side other applications that may otherwise require those resources. Mykros has been tested on high end hardware, low end virtual machines, and low end hardware while retaining the same functionality. 
 
-### Modularity and Expandability
+Mykros can also be run from a USB drive allowing you to use it between multiple devices and operating systmes with ease.
+
+### Modularity and expandability
 Designed with modularity at its core, Mykros offers an adaptable framework that caters to individual needs and workflows. While its foundation is python based, its flexible design integrates seamlessly with existing code, even those from non-native frameworks or even other programming languages, provided they interface through the Mykros python entry point for the custom action.
 
 You can create custom actions tailored to your needs, whether it's custom action to simplify interactions with a third-party tool you frequently use, streamline intricate computer tasks, set a timer using natural language, or even locate the latest cat videos. The possibilities are extensive. Moreover, you have the flexibility to deactivate any action, built-in or custom, and without needing to delete the actual action.
+
+### Accessibility
+Accessibility encompasses numerous facets, with language accessibility often being an overlooked. Often leaving groups who may find interaction with these models prohibitive due to the languages the models were originally trained on, which may not include their native language. While the rationale behind this is sound, the result is the same leaving groups of people unable to use the technology.
+
+Mykros addresses this issue by not only allowing the use of these models in your preferred language but also by allowing the flexibility of interacting with custom actions in that language as well.
+
+Given the ease of adding custom actions, should you have standalone code that is not in your preferred language and as a result causing it to be difficult navigate and use, you can add it as a custom action and then interact with it in your language of choice through the assistant.
+
+This is all done offline to maintain privacy and also allowing allowing the flexibility to be used on devices without an internet connection.
 
 ### Advanced intent management and workflow automation
 With Mykros you can execute single actions, independent multiple actions, or link them together to create powerful workflows. Linking actions allows the output of one action to act as the input for another action, enabling sophisticated chaining and automation. Additionally, the intent detection and entity extraction has been improved, and without needing large amounts of training data. Typically only needing around 20 examples for each new action. A simple action may require as little as 5 examples and complex actions that extracts multiple pieces of data may only require 50 or less examples of how the action may be requested.
@@ -73,6 +86,8 @@ After setting up the environment, you'll need to train the model. This is a one-
 
 ## Instructions
 
+*Note: If you wish to run this from a USB drive, while you can do the setup directly on the USB drive it is recommended to do it on your local hard drive and manually copy the files over to reduce environment configuration time. You can then launch the files directly from the USB drive since it is local to the folder and not your computer.*
+
 ### Step 1: Clone the Mykros framework repository
 
 If you have Git installed, open a terminal or command prompt and execute the following command to clone the repository:
@@ -92,7 +107,7 @@ Mykros is designed to be portable, utilizing a portable version of Miniconda to 
 
 If you are on windows, there are no prerequisites.
 
-If you are on linux, and using X11 you will need to install libxcb-xinerama package, which is required by PySide to manage the GUI interface. You can use the appropriate command based on your Linux distribution:
+If you are on linux, and using X11 you will need to install libxcb-xinerama package, which is required by PySide to manage the GUI interface. This package does need to be locally installed as it is unable to be loaded from the portable environment, and as a result needs to be installed even in the case where you run this from a usb drive.
 
 **Debian/Ubuntu:** 
 ```
@@ -294,11 +309,11 @@ conflict_groups:
 If you wish to modify any detection settings, you can do so via the settings.yml file located in the main directory. There are 3 settings included in the config file confidence threshold, keyword_proximity, confidence factors. These files don't need to be updated in order to add your own custom actions.
 
 
-**Confidence_threshold** - This is the threshold for the required confidence score for an intent to be detected. This is a global score for all intents. If the score is too high then you risk your actions not being detected, if the score is too low you risk multiple actions being detected when only a single action is intended.
+**confidence_threshold** - This is the threshold for the required confidence score for an intent to be detected. This is a global score for all intents. If the score is too high then you risk your actions not being detected, if the score is too low you risk multiple actions being detected when only a single action is intended.
 
 **keyword_proximity** - This is used for detecting multiple intents. This is the proximity the keywords need to be to be considered part of the same intent vs a secondary intent. 
 
-**Confidence_factors** - By default the Rasa model assigns a significantly lower confidence scores to secondary intents. This in turn significantly decreases the likelihood of multiple intents being detected accidentally, unfortunately it also reduces the likelihood of multiple intents being detected intentionally.
+**confidence_factors** - By default the Rasa model assigns a significantly lower confidence scores to secondary intents. This in turn significantly decreases the likelihood of multiple intents being detected accidentally, unfortunately it also reduces the likelihood of multiple intents being detected intentionally.
 
 If you choose to lower the confidence score to compensate you tend to accidentally detect multiple intents, not only in instances where you only intend for a single intent but also potentially detecting three intents when you only have two.
 
@@ -344,6 +359,40 @@ antonymize_word has a confidence score of 0.006223676260560751
 ```
 
 This has increased the accuracy of the intents including ones previously under the threshold as well as increasing the disparity between between the secondary intents. As a result open_terminal now has a higher confidence score than run_terminal which is the correct intent that should be detected. In addition, previously the fourth highest intent was antonymize_word where as now both open_file_explorer and open_browser are significantly higher, which would be a lot more accurate than antonymize_word. 
+
+**translation:** This setting is used to enable you to interact with models and custom actions that are not in your preferred language. There are four values shown below. They are enable, include_actions, from_language, to_language.
+
+translation:
+    enable: true  
+    include_actions: true 
+    from_language: sk 
+    to_language: en  
+
+The enable value is for the translation function as a whole. If this is set to any value other than true, no translation will occur. 
+
+The include_actions value controls whether translation functionality applies only for intent and entity detection, or if it also extends to custom actions. When extended to custom actions it will automatically integrate without the custom action needing to support the functionality. Additionally, the yes/no confirmation prompt is also impacted by this when set to true. 
+
+When set to true and the target language is English then you will be able to use either language for the yes/no confirmation. If the target language is something other than English then you will need to use English for the yes/no confirmation. In addition the /help and the /cancel functionality isn't translated and will only function in English.
+
+In most cases, you would want this set to true so that everything can be done in your preferred language. With that said, there are some use cases where you want to have it used only for intent detection and entity extraction. If for example you wanted a list of files in the folder /casa/etc/ and had it was extended to the custom actions, it would try to list the folders in /home/etc/ which may not exist on your system.
+
+The from_language is the language is your preferred language that will entering as your input.
+
+The to_language is the language the model and training data is in.
+
+While the functionality is enabled in any capacity, you will still be able to interact with the models and the custom actions in the language they were created in. The reason for this is because in most cases when it attempts to translate the word and no translation is found then it will fail, thus leaving the word as it was original inputted it and as a result already in the intended language. 
+
+The list of supported languages are below as well as in the settings.yml file.
+
+"Arabic": "ar", "Azerbaijani": "az", "Catalan": "ca", "Chinese": "zh", "Czech": "cs", "Danish": "da", "Dutch": "nl", "English": "en", # "Esperanto": "eo", "Finnish": "fi", "French": "fr", "German": "de", "Greek": "el", "Hebrew": "he", "Hindi": "hi", "Hungarian": "hu", "Indonesian": "id", "Irish": "ga", "Italian": "it", "Japanese": "ja", "Korean": "ko", "Persian": "fa", "Polish": "pl", "Portuguese": "pt", "Russian": "ru", "Slovak": "sk", "Spanish": "es", "Swedish": "sv", "Turkish": "tr", "Ukrainian": "uk"
+
+When translation functionality is enabled, it will download the model automatically when you input any text. The models are specific to that language combination, for example English to French, and are stored in the translation_models folder and approximately 100 MB. Internet connectivity is only required to download the model, and not used while utilizing the model.
+
+In addition, it will utilize an intermediate language if one is installed. For example, if you have the es->en and en->fr models downloaded then you are able to translate from es->fr as if you had that direct model installed. This allows for translating between a larger variety of languages at the cost of minimal loss of quality.
+
+The files are be automatically downloaded from [argosopentech](https://www.argosopentech.com/argospm/index/). 
+
+Please note, the automatic downloading of the models only works for the direct translations. If you are utilizing an intermediate language then you will need to have it previously installed , or manually trigger it downloading the model by setting the target and source languages including the intermediate language and then inputting any text into the assistant so that it downloads that model and then repeat the process for the other model. At which time you can then set the from_language and to_language accordingly and it will automatically use the intermediate language. This would only be a one time process, and only is needed if you don't wish to use a model for the translation directly as that would automatically download.
 
 &nbsp;
 
@@ -508,7 +557,7 @@ Similarly, if you wish to uninstall a library from the portable environment you 
 
 ### <ins>Training Data</ins>
 
-Next we need to create the training data. 
+Next we need to create the training data. By default Mykros expects the training data to be in English. Should you wish to train your model on a language other than English you will need to update the language listed in the config.yml. Should you be creating the training data in English, or have already updated the config file we will start with creating the training data.
 
 You will find a folder called data in the main directory, which contains a subfolder called nlu. Inside the nlu folder, there are 5 subfolders file_actions, misc_actions, system_actions, web_actions, word_actions. You should create a yml file that matches your intent name (for example, template_intent.yml) in the subfolder that best aligns with your custom action. The yml file is where the training data is stored along along with any custom regex should it be required.
 
@@ -750,10 +799,12 @@ https://github.com/scott-ca/mykros_assist/
 
 <ins>Additional license information</ins>
 
-Both the Mykros framework and Mykros assist currently heavy rely of the Rasa model (licensed under Apache-2.0) and the PySide2 library (licensed under the Lesser General Public License).
+Both the Mykros framework and Mykros assist currently heavy rely of the Rasa model (licensed under Apache-2.0), PySide2 library (licensed under the Lesser General Public License) for the GUI, and Argos Translate library (Licensed under MIT) for language translation.
 
 **Rasa:** The project doesn't include the Rasa source code, except for configuration files used to build the model. The model is generated from those configuration files, while the remaining components such as the action server are not utilized.
 
 The Rasa project can be found here: https://github.com/RasaHQ/rasa/
 
 **Pyside2:** This library is used for the GUI component of Mykros and the project can be found here: https://download.qt.io/official_releases/QtForPython/
+
+**Argos Translate** This library is used for language translations and is used to translate the user input to the language used in the model, training data, custom action allowing them to interact with these functions using their native language. The project can be found here https://github.com/argosopentech/argos-translate

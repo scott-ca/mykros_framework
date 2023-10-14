@@ -10,3 +10,21 @@ keyword_proximity: 5
 confidence_factors:
   main_factor: 30
   secondary_factor: 10
+
+# Translation settings.
+
+# Available languages and their corresponding codes: 
+# "Arabic": "ar", "Azerbaijani": "az", "Catalan": "ca", "Chinese": "zh", 
+# "Czech": "cs", "Danish": "da", "Dutch": "nl", "English": "en", 
+# "Esperanto": "eo", "Finnish": "fi", "French": "fr", "German": "de", 
+# "Greek": "el", "Hebrew": "he", "Hindi": "hi", "Hungarian": "hu", 
+# "Indonesian": "id", "Irish": "ga", "Italian": "it", "Japanese": "ja", 
+# "Korean": "ko", "Persian": "fa", "Polish": "pl", "Portuguese": "pt", 
+# "Russian": "ru", "Slovak": "sk", "Spanish": "es", "Swedish": "sv", 
+# "Turkish": "tr", "Ukrainian": "uk"
+
+translation:
+    enable: false  # Set to false to disable translation
+    include_actions: true # Set to false to only use translation for intent decection but not within the custom actions and ui interactions.
+    from_language: sk  # Source language 
+    to_language: en  # Target language 

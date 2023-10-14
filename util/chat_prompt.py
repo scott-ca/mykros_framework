@@ -20,7 +20,7 @@ with open('intent_config.yml', 'r') as stream:
     try:
         intents_config = yaml.safe_load(stream)
     except yaml.YAMLError as exc:
-        print(exc)
+        logging.debug(exc)
 
 # Filter out the disabled intents and add 'action_intent'
 intent_info = {
@@ -56,6 +56,9 @@ class ChatPrompt(QLineEdit):
         self.input_received.connect(self._store_input)
         self.expecting_additional_info = False
         self.first_response = True
+        self.nlu_data = self.load_nlu_data()
+        self.regex_patterns = self.load_regex_patterns()
+
 
         if 'DEBUG_MODE' in actions:
             self.output_widget.append(f"**DEBUG MODE ENABLED**.\n\nIF THIS WASN'T INTENTIONALLY ENABLED PLEASE DISABLE IT IN THE intent_config.yml FILE\n")
@@ -118,6 +121,58 @@ class ChatPrompt(QLineEdit):
             super().keyPressEvent(event)
 
 
+    def load_nlu_data(self):
+        """pre-loads nlu data."""
+
+        # Specify the directory where the NLU files are located
+        nlu_directory = os.path.join(os.getcwd(), "data", "nlu")
+
+        # Initialize an empty dictionary to store the NLU data
+        nlu_data_list = {}
+
+        # Specify the subfolder names to search for
+        subfolder_names = ["file_actions", "system_actions", "misc_actions", "web_actions", "word_actions" ]
+
+        # Recursively search for .yml file paths in the directory and its subfolders
+        for subfolder_name in subfolder_names:
+            subfolder_path = os.path.join(nlu_directory, subfolder_name)
+            subfolder_files = glob.glob(os.path.join(subfolder_path, "*.yml"))
+            for file_path in subfolder_files:
+                with open(file_path, "r") as file:
+                    nlu_data_temp = yaml.safe_load(file)
+                    file_name = os.path.basename(file_path)
+                    nlu_data_list[file_name] = nlu_data_temp
+
+        nlu_data = defaultdict(list)
+
+        for data in nlu_data_list.values():
+            for key, value in data.items():
+                if isinstance(value, list):
+                    nlu_data[key].extend(value)
+                else:
+                    nlu_data[key] = value
+
+        # Replaces the placeholders IE. __FSLASH__,__BSLASH__,__PERCENT__ in the training data with forward slashes so that it can display correctly for the user in the output widget.
+        nlu_data = {key: replace_specialchar(value) for key, value in nlu_data.items()}
+
+        logging.debug("\nNLU: Data\n")
+        logging.debug(nlu_data)
+
+        return nlu_data
+        
+
+    def load_regex_patterns(self):
+        """pre-loads regex paterns"""
+
+        # Prepare regex patterns for intent matching
+        regex_patterns = prepare_intent_patterns(self.nlu_data)
+
+        logging.debug("Regex Patterns:")
+        logging.debug(regex_patterns)
+        logging.debug("End of Regex Patterns")
+
+        return regex_patterns
+
     def handle_chat(self):
         """Handle the user's chat input."""
         
@@ -144,62 +199,27 @@ class ChatPrompt(QLineEdit):
             
             intent_ranking = response["intent_ranking"]
 
-            print(response)
-
-            
+            logging.debug(response)
 
             # Load the YAML file for confidence threshold
             with open('settings.yml', 'r') as file:
-                settings = yaml.safe_load(file)
+                settings = yaml.safe_load(file)            
 
+            # Used to control if the translated data goes to the custom_actions
+            translated_user_input = user_input
+
+            if settings['translation']['enable']:
+                    user_input = response['text']
+                    user_input = replace_specialchar(user_input)
+
+                    if settings['translation']['include_actions']:
+                        translated_user_input = user_input
+                
             # Retrieve the confidence_threshold value for any intents to be considered present in the repsonse.
             confidence_threshold = settings['confidence_threshold']
 
             # Print the confidence_threshold
             logging.debug(f"Confidence Threshold: {confidence_threshold}")
-
-
-            # Specify the directory where the NLU files are located
-            nlu_directory = os.path.join(os.getcwd(), "data", "nlu")
-
-            # Initialize an empty dictionary to store the NLU data
-            nlu_data_list = {}
-
-            # Specify the subfolder names to search for
-            subfolder_names = ["file_actions", "system_actions", "misc_actions", "web_actions", "word_actions" ]
-
-            # Recursively search for .yml file paths in the directory and its subfolders
-            for subfolder_name in subfolder_names:
-                subfolder_path = os.path.join(nlu_directory, subfolder_name)
-                subfolder_files = glob.glob(os.path.join(subfolder_path, "*.yml"))
-                for file_path in subfolder_files:
-                    with open(file_path, "r") as file:
-                        nlu_data_temp = yaml.safe_load(file)
-                        file_name = os.path.basename(file_path)
-                        nlu_data_list[file_name] = nlu_data_temp
-
-            nlu_data = defaultdict(list)
-
-            for data in nlu_data_list.values():
-                for key, value in data.items():
-                    if isinstance(value, list):
-                        nlu_data[key].extend(value)
-                    else:
-                        nlu_data[key] = value
-
-            # Print the final NLU data
-            print("\nNLU Data\n")
-            print(nlu_data)
-
-            # Replaces the placeholders IE. __FSLASH__,__BSLASH__,__PERCENT__ in the training data with forward slashes so that it can display correctly for the user in the output widget.
-            nlu_data = {key: replace_specialchar(value) for key, value in nlu_data.items()}
-           
-            # Prepare regex patterns for intent matching
-            regex_patterns = prepare_intent_patterns(nlu_data)
-
-            logging.debug("Regex Patterns:")
-            logging.debug(regex_patterns)
-            logging.debug("End of Regex Patterns")
 
             if self.expecting_additional_info == False:
                 if self.first_response == True:
@@ -207,7 +227,7 @@ class ChatPrompt(QLineEdit):
                     
             # Updates the intent confidence based on present keywords for the intents in the user input.
             if "nlu_fallback" not in [intent["name"] for intent in intent_ranking]:
-                intent_ranking = keyword_confidence_update(intent_ranking, regex_patterns, user_input)
+                intent_ranking = keyword_confidence_update(intent_ranking, self.regex_patterns, user_input)
                     
             # Filter intents above confidence threshold
             intents_above_threshold = [intent for intent in intent_ranking if intent["confidence"] >= confidence_threshold]
@@ -228,7 +248,6 @@ class ChatPrompt(QLineEdit):
             export_count = user_input.lower().count("exported")
             export_count += user_input.lower().count("export")
 
-            print()
             if export_count == 0:
 
                 # Resolve conflicts within conflict groups based on highest confidence score
@@ -259,25 +278,25 @@ class ChatPrompt(QLineEdit):
             # Logging: Print intent information before sorting
             logging.debug("Before sorting:")
             for index, intent in enumerate(intents_above_threshold):
-                position = intent_position(f"{intent['name']}_keywords", user_input, regex_patterns)
+                position = intent_position(f"{intent['name']}_keywords", user_input, self.regex_patterns)
                 logging.debug(f"Intent {index + 1}: {intent['name']}, Position: {position}, Confidence: {intent['confidence']}")
 
             # Sort intents based on keyword position so that mutliple intents are executed in the correct order
             sorted_intents = sorted(
                 intents_above_threshold,
-                key=lambda intent: intent_position(f"{intent['name']}_keywords", user_input, regex_patterns),
+                key=lambda intent: intent_position(f"{intent['name']}_keywords", user_input, self.regex_patterns),
             )
 
             # Logging: Print intent information after sorting
             logging.debug("\nAfter sorting:")
             for index, intent in enumerate(sorted_intents):
-                position = intent_position(f"{intent['name']}_keywords", user_input, regex_patterns)
+                position = intent_position(f"{intent['name']}_keywords", user_input, self.regex_patterns)
                 logging.debug(f"Intent {index + 1}: {intent['name']}, Position: {position}, Confidence: {intent['confidence']}")
 
             top_intents = sorted_intents
 
             # Extract keywords from user input
-            extracted_keywords = extract_keywords(user_input, regex_patterns)
+            extracted_keywords = extract_keywords(user_input, self.regex_patterns)
             logging.debug(f"Extracted keywords: {extracted_keywords}")
 
             # Logging: Print extracted entities and sorted intents
@@ -287,7 +306,7 @@ class ChatPrompt(QLineEdit):
                 logging.debug(f"Intent {index + 1}: {intent['name']}, Confidence: {intent['confidence']}")
 
             # Logging: Print regex patterns
-            for item in nlu_data["nlu"]:
+            for item in self.nlu_data["nlu"]:
                 if "regex" in item:
                     logging.debug(f"Entity '{item['regex']}' has a regex pattern.")
                     
@@ -298,7 +317,7 @@ class ChatPrompt(QLineEdit):
             entities = {key: replace_specialchar(value) for key, value in entities.items()}
 
             # loop through each entity in the response
-            for entity in nlu_data["nlu"]:
+            for entity in self.nlu_data["nlu"]:
                 if "regex" in entity:
                     # check if the entity exists in the extracted keywords dictionary
                     if entity['regex'] in extracted_keywords:
@@ -316,8 +335,8 @@ class ChatPrompt(QLineEdit):
 
             # Check if any of the intents require additional information from the user
             if self.expecting_additional_info:
-                self._user_input = user_input
-                self.input_received.emit(user_input)
+                self._user_input = translated_user_input
+                self.input_received.emit(translated_user_input)
                 self.expecting_additional_info = False
                 return
 
@@ -325,7 +344,7 @@ class ChatPrompt(QLineEdit):
             if "chat" in [intent["name"] for intent in top_intents]:
                 self.output_widget.append(f"AI: {response['text']}")
             else:
-                process_intents(nlu_data, top_intents, entities, user_input, regex_patterns, self.output_widget, self)
+                process_intents(self.nlu_data, top_intents, entities, user_input, self.regex_patterns, self.output_widget, self)
 
 
 def replace_specialchar(value):
@@ -351,7 +370,7 @@ def replace_specialchar(value):
         return {key: replace_specialchar(item) for key, item in value.items()}
     else:
         return value
-    
+
 
 def keyword_confidence_update(intent_ranking, regex_patterns, user_input):
     """
@@ -366,9 +385,9 @@ def keyword_confidence_update(intent_ranking, regex_patterns, user_input):
         list: The updated intent_ranking list with modified confidence scores.
 
     """
-    print("intent list")
-    print(intent_ranking)
-    print("end of intent list")
+    logging.debug("intent list")
+    logging.debug(intent_ranking)
+    logging.debug("end of intent list")
 
     # Initialize main and secondary associations
     main_associations = {}
@@ -385,8 +404,8 @@ def keyword_confidence_update(intent_ranking, regex_patterns, user_input):
 
 
     # Print the confidence_factors
-    print(f"Main Factor: {main_factor}")
-    print(f"Secondary Factor: {secondary_factor}")
+    logging.debug(f"Main Factor: {main_factor}")
+    logging.debug(f"Secondary Factor: {secondary_factor}")
 
     # Logging: Print positions of intent keywords
     logging.debug("Keyword positions")
@@ -397,8 +416,8 @@ def keyword_confidence_update(intent_ranking, regex_patterns, user_input):
         for match in matches:
             keyword = match.group()
             position = match.start()
-            print("Intent position")
-            print(position)
+            logging.debug("Intent position")
+            logging.debug(position)
 
             # Initial confidence score
             initial_score = intent['confidence']
@@ -495,7 +514,7 @@ def intent_position(intent_name, user_input, regex_patterns):
     keyword_proximity = settings['keyword_proximity']
 
     # Print the keyword_proximity
-    print(f"Keyword Proximity: {keyword_proximity}")
+    logging.debug(f"Keyword Proximity: {keyword_proximity}")
 
     pattern = regex_patterns.get(intent_name, '')
     if pattern:
@@ -580,8 +599,8 @@ def process_intents(nlu_data, intents, entities, user_input, regex_patterns, out
     shared_data = []
     intents_with_positions = []
 
-    print("ACTIOOOONIES")
-    print(actions)
+    logging.debug("Actions:")
+    logging.debug(actions)
 
 
     if 'DEBUG_MODE' in actions:
@@ -728,8 +747,8 @@ def process_intents(nlu_data, intents, entities, user_input, regex_patterns, out
             user_input = chat_prompt.wait_for_input().strip().lower()
             if user_input == "yes":
                 for action_key in pending_actions:
-                    print("shared data:")
-                    print(shared_data)
+                    logging.debug("shared data:")
+                    logging.debug(shared_data)
                     working_action = [action_key, actions.get(action_key, {}).replace("action_", "", 1)]
                     execute_action(working_action, entities, shared_data, output_widget, chat_prompt)
                 break
@@ -759,9 +778,9 @@ def process_intents(nlu_data, intents, entities, user_input, regex_patterns, out
             chat_prompt.request_input("Please type 'yes' or 'no':")
             user_input = chat_prompt.wait_for_input().strip().lower()
             if user_input == "yes":
-                print("list of actions")
-                print(actions)
-                print("end of list")
+                logging.debug("list of actions")
+                logging.debug(actions)
+                logging.debug("end of list")
                 working_action = [action_key, actions.get(action_key, {}).replace("action_", "", 1)]
                 execute_action(working_action, entities, shared_data, output_widget, chat_prompt)
                 break
