@@ -14,6 +14,7 @@ elif platform.system() ==  'Windows':
     import keyboard
 
 from util.chat_prompt import ChatPrompt
+from util.translator import translate_output
 
 class MainWindow(QMainWindow):
     """Main application window for the Mykros framework."""
@@ -32,6 +33,26 @@ class MainWindow(QMainWindow):
         self.output_widget = QTextEdit()
         self.output_widget.setReadOnly(True)
         self.setCentralWidget(self.output_widget)
+
+
+        # Wrapping the append method with translation function
+        original_append = self.output_widget.append
+
+        def translated_output_widget(message, bypass_translation=False):
+            logging.debug(f'\nPrompt Text - Pre Translation: {message} ')
+            if bypass_translation == True:
+                translated_message = message
+                logging.debug(f'Prompt Text - Post(Skip) Translation: {translated_message} ')
+            else:
+                translated_message = translate_output(message)
+                logging.debug(f'Prompt Text - Post Translation: {translated_message} ')
+            # Check encoding pre and post-translation
+            logging.debug(f'Encoding pre-translation: {str(message.encode())}')
+            logging.debug(f'Encoding post-translation: {str(translated_message.encode())}')
+            original_append(translated_message)
+
+        self.output_widget.append = translated_output_widget
+
 
         # Create the chat prompt widget
         self.chat_prompt = ChatPrompt(self.output_widget)

@@ -6,6 +6,7 @@
 # Table of contents
 * [Summary](#summary)
 * [Why choose the Mykros framework](#why-choose-the-mykros-framework)
+* [Roadmap](#roadmap)
 * [Installation instructions](#installation-instructions)
 * [Running Mykros](#running-mykros)
 * [Adding custom actions](#adding-custom-actions)
@@ -43,10 +44,12 @@ Designed with modularity at its core, Mykros offers an adaptable framework that 
 
 You can create custom actions tailored to your needs, whether it's custom action to simplify interactions with a third-party tool you frequently use, streamline intricate computer tasks, set a timer using natural language, or even locate the latest cat videos. The possibilities are extensive. Moreover, you have the flexibility to deactivate any action, built-in or custom, and without needing to delete the actual action.
 
+Mykros has been designed to be as modular as possible even outside of the custom actions, allowing you to customize various components to suit your specific needs. For instance, the translation feature in Mykros is compartmentalized, making it straightforward to replace with a different library or tool if should you prefer to use something else to handle that component. This modularity ensures that you can adapt and customize Mykros to meet your specific needs while maintaining the overall functionality of the AI assistant.
+
 ### Accessibility
 Accessibility encompasses numerous facets, with language accessibility often being an overlooked. Often leaving groups who may find interaction with these models prohibitive due to the languages the models were originally trained on, which may not include their native language. While the rationale behind this is sound, the result is the same leaving groups of people unable to use the technology.
 
-Mykros addresses this issue by not only allowing the use of these models in your preferred language but also by allowing the flexibility of interacting with custom actions in that language as well.
+Mykros addresses this issue by not only allowing the use of these models in your preferred language but also by allowing the flexibility of interacting with custom actions in that language as well. This also allows for the option of translating only the input for intent detection, all input, all output, or both input and output.
 
 Given the ease of adding custom actions, should you have standalone code that is not in your preferred language and as a result causing it to be difficult navigate and use, you can add it as a custom action and then interact with it in your language of choice through the assistant.
 
@@ -61,6 +64,34 @@ You can an see some examples of custom actions that could be created in a projec
 
 &nbsp;
 &nbsp;
+
+## Roadmap
+
+Mykros is more than merely another AI framework. It's also about ensuring the advancements in AI remains accessible to as broad of range of people as possible. In an industry that is rapidly evolving, it also means evolving Mykros as well.
+
+Everyone has unique technology requirements and preferences when it comes to the tools they use, as well as limitations that determine which tools they cannot or choose not to use. While we can't reach everyone or meet every requirement, that doesn't mean we shouldn't strive to.
+
+Privacy, for some, is paramount, requiring a greater need for control over their own data. For others, their limitations resides in access to hardware, whether it be high-end hardware or simply adequate storage capacity. While others, on the other hand, may be limited by the lack of stable internet access or may not have access to the internet at all. Some even may have all the access, but simple do not speak the native language the tools were developed in and as a result cannot use the tool.
+
+Sometimes, it's as simple as having the choice and the flexibility to access tools that work best for you, in the way that works best for you.
+
+Advancements often increase accessibility, but they can also sometimes widen existing limitations or even introduce new ones.
+
+These requirements and restrictions are constantly changing and evolving. Mykros strives to keep pace with these developments.
+
+
+Below are areas of potential development, which can explore either directly or collaboratively with the community.
+
+- **Auto detect input language**: Explore the potential feature and overhead that would be added by having an option to set the input language to "auto-detect". If implemented, it would be optional and always have the option to specify the language or disable translation completely, bypassing any overhead used by this functionality.
+
+- **Updates**: Introducing an option to update to allow for updating the version of the framework and/or AI assistant. This would involve a manual check for updates to ensure it isn't accessing the internet without your knowledge and causing software instability by the updates. It would be customizable so that developers can update the framework while also giving users of various AI assistant built on the framework the option to update to the latest version of the assistant. The latter option would allow users to update the specific AI assistant and not necessarily the framework itself and as such would allow the option to point to where the developer stores their update files.
+
+- **Backup and restore**: : Incorporating the ability to create environment backups during direct changes made by the developer utilizing the framework or automatic backups during updates. The system would retain a set number of backups, facilitating easy restoration to a previous version in cases of incompatibility or other issues.
+
+- **Offline voice integration**: Exploring options for offline voice integration, potentially with a distinct keybinding to ensure intentional activation when enabling the feature.
+
+
+Your feedback and contributions toward these future developments are greatly welcomed and appreciated!
 
 ## Installation instructions
 
@@ -360,39 +391,61 @@ antonymize_word has a confidence score of 0.006223676260560751
 
 This has increased the accuracy of the intents including ones previously under the threshold as well as increasing the disparity between between the secondary intents. As a result open_terminal now has a higher confidence score than run_terminal which is the correct intent that should be detected. In addition, previously the fourth highest intent was antonymize_word where as now both open_file_explorer and open_browser are significantly higher, which would be a lot more accurate than antonymize_word. 
 
-**translation:** This setting is used to enable you to interact with models and custom actions that are not in your preferred language. There are four values shown below. They are enable, include_actions, from_language, to_language.
+**translation:** This setting is used to enable you to interact with models and custom actions that are not in your preferred language. There are six values shown below. They are enable, input_intent_detection, all_input, all_output, from_language, to_language.
 
 translation:
-    enable: true  
-    include_actions: true 
-    from_language: sk 
-    to_language: en  
+    enable: true
+    input_intent_detection: true
+    all_input: true
+    all_output: true
+    from_language: sk
+    to_language: en
 
-The enable value is for the translation function as a whole. If this is set to any value other than true, no translation will occur. 
 
-The include_actions value controls whether translation functionality applies only for intent and entity detection, or if it also extends to custom actions. When extended to custom actions it will automatically integrate without the custom action needing to support the functionality. Additionally, the yes/no confirmation prompt is also impacted by this when set to true. 
+The enable value is for the translation function as a whole. If this is set to any value other than true, no translation will occur.
 
-When set to true and the target language is English then you will be able to use either language for the yes/no confirmation. If the target language is something other than English then you will need to use English for the yes/no confirmation. In addition the /help and the /cancel functionality isn't translated and will only function in English.
+The input_intent_detection value controls whether translation functionality applies to text you input for intent and entity detection. 
 
-In most cases, you would want this set to true so that everything can be done in your preferred language. With that said, there are some use cases where you want to have it used only for intent detection and entity extraction. If for example you wanted a list of files in the folder /casa/etc/ and had it was extended to the custom actions, it would try to list the folders in /home/etc/ which may not exist on your system.
+The all_input value will apply the translation to your input for intent and entity detection the same as input_intent_detection, as well as extends the functionality to custom actions. When extended to custom actions it will automatically integrate without the custom action needing to support the functionality. Additionally, when set to true and the to_language is set to English you will be able to use either language for the yes/no confirmation. If the to_language is something other than English then you will need to use English for the yes/no confirmation. In addition while the /help and the /cancel functionality will be translated, the specific input of "/help" and "/cancel" will only function in English.
 
-The from_language is the language is your preferred language that will entering as your input.
+In most cases, you would want all of your input translated to your preferred language. With that said, there are some use cases where you may not wish to have all of your input translated. 
 
-The to_language is the language the model and training data is in.
+If for example you wanted a list of files in the folder and it was extended to the custom actions, then when you input
+'''
+listar archivos en la carpeta /casa/etc/ 
+'''
 
-While the functionality is enabled in any capacity, you will still be able to interact with the models and the custom actions in the language they were created in. The reason for this is because in most cases when it attempts to translate the word and no translation is found then it will fail, thus leaving the word as it was original inputted it and as a result already in the intended language. 
+it would try to list the folders in /home/etc/ which may not exist on your system.
+
+You can bypass the translation of any part of the text in your input by surrounding it in double quotes. Using the previous example you could write
+
+'''
+listar archivos en la carpeta "/casa/etc/"
+'''
+
+Which then would look for folders in /casa/etc/. It would also remove the quotes, so that it interacts with the model as if you didn't include them. It only uses the quotes to detect what text it should bypass translation on.
+
+Alternativly, you could disable translation for input and have it only translate output text, or disable translation entirly.
+
+The all_output value controls whether the output text is translated. It will translate any output text that is in the to_language to the from_language. It works in the reverse of the input translation so that you have the option of interacting in both directions with the model. This will translate all_output including but not limited to the output from the custom actions.
+
+The from_language is the language is your preferred language that will entering as your input. This is also used as the target output language should you enable output translation.
+
+The to_language is the language the model, training data, and custom actions are in. This is also used as the source language for output and should match the language the model and custom actions are in.
+
+While the functionality is enabled in any capacity, depending on the language, you may be able to interact with the models and the custom actions in both your preferred language and the language they were created in simultaneously without changing any settings. The reason for this is because in most cases when it attempts to translate the word and no translation is found then it will fail, thus leaving the word as it was original inputted in and as a result already in the intended language. 
 
 The list of supported languages are below as well as in the settings.yml file.
 
 "Arabic": "ar", "Azerbaijani": "az", "Catalan": "ca", "Chinese": "zh", "Czech": "cs", "Danish": "da", "Dutch": "nl", "English": "en", # "Esperanto": "eo", "Finnish": "fi", "French": "fr", "German": "de", "Greek": "el", "Hebrew": "he", "Hindi": "hi", "Hungarian": "hu", "Indonesian": "id", "Irish": "ga", "Italian": "it", "Japanese": "ja", "Korean": "ko", "Persian": "fa", "Polish": "pl", "Portuguese": "pt", "Russian": "ru", "Slovak": "sk", "Spanish": "es", "Swedish": "sv", "Turkish": "tr", "Ukrainian": "uk"
 
-When translation functionality is enabled, it will download the model automatically when you input any text. The models are specific to that language combination, for example English to French, and are stored in the translation_models folder and approximately 100 MB. Internet connectivity is only required to download the model, and not used while utilizing the model.
+When translation functionality is enabled, it will download the model automatically when you input any text. The models are specific to that language combination, for example English to French, and are stored in the translation_models folder and approximately 100-200 MB. Internet connectivity is only required to download the model, and not used while utilizing the model.
 
-In addition, it will utilize an intermediate language if one is installed. For example, if you have the es->en and en->fr models downloaded then you are able to translate from es->fr as if you had that direct model installed. This allows for translating between a larger variety of languages at the cost of minimal loss of quality.
+In addition, it will automatically utilize an intermediate language if one is installed. For example, if you have the es->en and en->fr models downloaded then you are able to translate from es->fr as if you had that direct model installed. This allows for translating between a larger variety of languages at the cost of minimal loss of quality.
 
 The files are be automatically downloaded from [argosopentech](https://www.argosopentech.com/argospm/index/). 
 
-Please note, the automatic downloading of the models only works for the direct translations. If you are utilizing an intermediate language then you will need to have it previously installed , or manually trigger it downloading the model by setting the target and source languages including the intermediate language and then inputting any text into the assistant so that it downloads that model and then repeat the process for the other model. At which time you can then set the from_language and to_language accordingly and it will automatically use the intermediate language. This would only be a one time process, and only is needed if you don't wish to use a model for the translation directly as that would automatically download.
+Please note, the automatic downloading of the models only works for the direct translations. If you are utilizing an intermediate language then you will need to have it previously installed , or manually trigger the downloading of the model by setting the target and source languages including the intermediate language and then start the assistant so that it downloads that model and then repeat the process for the other model. At which time you can then set the from_language and to_language accordingly and it will automatically use the intermediate language. This would only be a one time process, and only is needed if you don't wish to use a model for the translation directly as that would automatically download.
 
 &nbsp;
 
@@ -444,7 +497,7 @@ All of the variables shown in the function header are passed into the function a
 
 Below is a breakdown what each parameter is used for.
 
-**output_widget:** This is used if you need to display any output to the user. This would also be needed if you have any required entities that require prompting from the user should they not be included in the original user input.
+**output_widget:** This is used if you need to display any output to the user. This would also be needed if you have any required entities that require prompting from the user should they not be included in the original user input. The output_widget also has an optional parameter called bypass_translation that when set to true, which will ensure that the output isn't translated by translation component should you need to make sure it isn't altered. This only impacts what is displayed to the user, not what is processed your custom action.
 
 **entities:** The entities extracted from the user input.
 

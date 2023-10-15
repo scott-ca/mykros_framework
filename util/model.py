@@ -35,7 +35,7 @@ class Model:
             Message: The parsed result of the user message.
         """
 
-        if message.lower() not in ["yes", "no"]:
+        if message.lower() != "yes" and message.lower() != "no":
             # Translate the message if needed
             logging.debug(f"pre:translation {message}")
             message = translate_message(message)

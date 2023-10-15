@@ -14,7 +14,6 @@ from custom_actions.execute_actions import execute_action
 from util.misc import intent_help
 from util.rasa_model import rasa_model
 
-
 # Load the YAML configuration file
 with open('intent_config.yml', 'r') as stream:
     try:
@@ -92,7 +91,6 @@ class ChatPrompt(QLineEdit):
         Returns:
             Signal: The input received signal.
         """
-
         self.output_widget.append(f"AI: {prompt_text}")
         input_received = self.input_received
 
@@ -178,15 +176,18 @@ class ChatPrompt(QLineEdit):
         
         
         user_input = self.text()
-        self.setText('')
+        logging.debug(f"TYPE: {type(user_input)}, CONTENT: {user_input}")
 
+        logging.debug(f"ORIGINAL USER INPUT: {repr(user_input)}")
+        self.setText('')
+        logging.debug(f"ORIGINAL USER INPUT: {repr(user_input)}")
         if self.first_response == True:
-            self.output_widget.append(f"You: {user_input}")
+            self.output_widget.append(f"You: {user_input}", bypass_translation=True)
 
 
         elif self.first_response == False:
-            self.output_widget.append(f"\nYou: {user_input}")
-
+            self.output_widget.append(f"\nYou: {user_input}", bypass_translation=True)
+            logging.debug(f"ORIGINAL USER INPUT: {repr(user_input)}")
         if user_input == "/help" or user_input.startswith("/help "):
             if user_input == "/help":
                 user_input = "/help general"
@@ -205,15 +206,15 @@ class ChatPrompt(QLineEdit):
             with open('settings.yml', 'r') as file:
                 settings = yaml.safe_load(file)            
 
-            # Used to control if the translated data goes to the custom_actions
+            # Used to control if the translated data goes to the custom_actions.
             translated_user_input = user_input
 
             if settings['translation']['enable']:
-                    user_input = response['text']
-                    user_input = replace_specialchar(user_input)
-
-                    if settings['translation']['include_actions']:
-                        translated_user_input = user_input
+                    if settings['translation']['input_intent_detection'] or settings['translation']['all_input']:
+                        user_input = response['text']
+                        user_input = replace_specialchar(user_input)
+                        if settings['translation']['all_input']:
+                            translated_user_input = user_input
                 
             # Retrieve the confidence_threshold value for any intents to be considered present in the repsonse.
             confidence_threshold = settings['confidence_threshold']
