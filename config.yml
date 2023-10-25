@@ -5,8 +5,13 @@ pipeline:
     token_pattern: (?u)\b\w+\b
   - name: RegexFeaturizer
   - name: LexicalSyntacticFeaturizer
+  - name: CRFEntityExtractor
   - name: CountVectorsFeaturizer
     analyzer: char_wb
+    min_ngram: 1
+    max_ngram: 4
+  - name: CountVectorsFeaturizer
+    analyzer: word
     min_ngram: 1
     max_ngram: 4
   - name: DIETClassifier
@@ -15,7 +20,7 @@ pipeline:
     constrain_similarities: true
     model_confidence_threshold: 0.8
     batch_strategy: balanced
-    batch_size: [64, 256]
+    batch_size: [64 , 256]
     ranking_length: 10
     random_seed: 1
   - name: EntitySynonymMapper
@@ -31,4 +36,4 @@ policies:
     epochs: 1
   - name: RulePolicy
 
-assistant_id: mykros-framework
+assistant_id: mykros-assist

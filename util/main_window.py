@@ -1,5 +1,5 @@
 from PySide2.QtGui import QIcon, QScreen
-from PySide2.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QAction, QMainWindow, QVBoxLayout, QWidget, QTextEdit
+from PySide2.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QAction, QMainWindow, QVBoxLayout, QWidget, QTextEdit, QMessageBox
 from PySide2.QtCore import Signal, QSettings, QPoint
 import logging
 import platform
@@ -17,7 +17,7 @@ from util.chat_prompt import ChatPrompt
 from util.translator import translate_output
 
 class MainWindow(QMainWindow):
-    """Main application window for the Mykros framework."""
+    """Main application window for the Mykros Framework."""
 
     show_signal = Signal()
 
@@ -69,9 +69,11 @@ class MainWindow(QMainWindow):
         self.tray_icon = QSystemTrayIcon(QIcon("icon.png"), self)
         self.tray_icon.setToolTip('Mykros framework')
         self.show_action = QAction('Show', triggered=self.show_chat_prompt)
+        self.about_action = QAction('About', triggered=self.show_about)
         self.quit_action = QAction('Quit', triggered=QApplication.instance().quit)
         self.tray_menu = QMenu()
         self.tray_menu.addAction(self.show_action)
+        self.tray_menu.addAction(self.about_action)
         self.tray_menu.addAction(self.quit_action)
         self.tray_icon.setContextMenu(self.tray_menu)
         self.tray_icon.show()
@@ -134,3 +136,7 @@ class MainWindow(QMainWindow):
             center_x = screen_geometry.center().x() - window_geometry.width() / 2
             center_y = screen_geometry.center().y() - window_geometry.height() / 2
             self.move(center_x, center_y)
+    def show_about(self):
+        """Show an about window that shows the Mykros version."""
+        QMessageBox.about(self, "About Mykros", "Mykros framework\n Version: 0.2.1")
+

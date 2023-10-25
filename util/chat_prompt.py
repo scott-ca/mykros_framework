@@ -216,6 +216,59 @@ class ChatPrompt(QLineEdit):
                         if settings['translation']['all_input']:
                             translated_user_input = user_input
                 
+
+            logging.debug(f"\nInitial response:\n {response}")
+
+            # List of initial entities in the response for debugging
+            initial_entities = response.get('entities', [])
+
+            # Log the initial entities
+            logging.debug(f"\nInitial entities:\n {initial_entities}")
+
+            # Group entities by entity name
+            from collections import defaultdict
+            entity_groups = defaultdict(list)
+            for entity in response['entities']:
+                entity_groups[entity['entity']].append(entity)
+
+            # Determine the best entity for each group
+            best_entities = []
+            for entity_type, entities in entity_groups.items():
+
+                # Checks if any of the extractions for the entity group come from RegexEntityExtractor. If so, makes it the priority and skips the remaining in the group.
+                regex_entities = [e for e in entities if e.get('extractor') == 'RegexEntityExtractor']
+                if regex_entities:
+                    best_entities.extend(regex_entities)
+                    continue
+
+                # Filter out entities without a 'confidence_entity' and sort the rest with lowest being first.
+                entities_with_confidence = [e for e in entities if 'confidence_entity' in e]
+                entities_with_confidence = sorted(entities_with_confidence, key=lambda x: x['confidence_entity'])
+
+                # If we have entities with confidence scores, set the first one as the current best
+                if entities_with_confidence:
+                    best_entity = entities_with_confidence[0]
+                else:
+                    # If there are no entities with confidence scores, just use the first entity in the original list
+                    best_entity = entities[0]
+
+                # Iterate and compare
+                for entity in entities:
+                    current_word_count = word_count(entity['value'])
+                    best_word_count = word_count(best_entity['value'])
+
+                    # Check if the current entity has more words or the same number of words but higher confidence and updates accordingly
+                    if current_word_count > best_word_count or (current_word_count == best_word_count and entity.get('confidence_entity', 0) > best_entity.get('confidence_entity', 0)):
+                        best_entity = entity
+
+                # Add the best entity to the result list
+                best_entities.append(best_entity)
+
+            response['entities'] = best_entities
+
+
+            logging.debug(f"\nTop confidence of each entity:\n {response['entities']}")
+                
             # Retrieve the confidence_threshold value for any intents to be considered present in the repsonse.
             confidence_threshold = settings['confidence_threshold']
 
@@ -260,14 +313,12 @@ class ChatPrompt(QLineEdit):
                         intents_above_threshold.append(highest_confidence_intent)
 
             else:
+ 
+                # Sorts intents that are above the threshold in descending order and assign the export_count+1 worth of top values to highest_confidence_intents
+                highest_confidence_intents = sorted(intents_above_threshold, key=lambda intent: intent["confidence"], reverse=True)[:export_count + 1]
 
-                # Resolve conflicts within conflict groups based on highest confidence score when exporting and importing linking intents
-                for group in conflict_groups:
-                    conflicting_intents = [intent for intent in intents_above_threshold if intent["name"] in group]
-                    if len(conflicting_intents) >= 2:
-                        highest_confidence_intents = sorted(conflicting_intents, key=lambda intent: intent["confidence"], reverse=True)
-                        intents_above_threshold = [intent for intent in intents_above_threshold if intent not in conflicting_intents]
-                        intents_above_threshold.extend(highest_confidence_intents[:export_count+1])
+                intents_above_threshold = highest_confidence_intents
+
 
             # Logging: Print post conflict_groups filter
             logging.debug("Filtered Intents after conflict_group filter")
@@ -322,9 +373,11 @@ class ChatPrompt(QLineEdit):
                 if "regex" in entity:
                     # check if the entity exists in the extracted keywords dictionary
                     if entity['regex'] in extracted_keywords:
-                        # set the entity value to the corresponding value in the extracted keywords dictionary. Used for custom entity regex extraction. IE. terminal_command or browser.
-                        entities[entity['regex']] = extracted_keywords[entity['regex']][0]
-                        logging.debug(f"Entity updated for entity: {entity} and with the keyword {entities[entity['regex']]}  ")
+                        # Makes sure to not replace any pre-existing value. this the only bit added
+                        if entity['regex'] in entities and not entities[entity['regex']]:
+                            # set the entity value to the corresponding value in the extracted keywords dictionary. Used for custom entity regex extraction. IE. terminal_command or browser.
+                            entities[entity['regex']] = extracted_keywords[entity['regex']][0]
+                            logging.debug(f"Entity updated for entity: {entity} and with the keyword {entities[entity['regex']]}  ")
                 else:
                     logging.debug("no keywords")
 
@@ -863,3 +916,7 @@ def extract_keywords(text, intent_patterns):
         if matches:
             keywords[intent] = matches
     return keywords
+
+# Function to count the number of words in a text
+def word_count(text):
+    return len(text.split())
