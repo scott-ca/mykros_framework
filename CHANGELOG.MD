@@ -4,6 +4,15 @@ All notable improvements, changes, and fixes to Mykros will be documented in thi
 
 ## [Pre-release]
 
+## [0.2.2] - 2023-10-26
+### Major changes
+
+- Added system tray context menu for custom actions. It will display all of the intents, custom actions, descriptions, and if they are enabled. In addition, you hae the option to enable/disable intents/actions as well as edit the custom_actions function and training data from within Mykros. 
+
+You also have the option to backup your changes and restore them as well from your last backup. This should make updating or tweaking your custom actions and the respect training data more streamlined. You no longer need to manually browse to the respective folders and open the files to make the changes, and have a built in way to restore your previous version instead of manually needing to create a backup.
+
+You will still need to re-train your model manually. However, a feature is being worked on to allow you to trigger the re-training of the model from within Mykros. 
+
 ## [0.2.1] - 2023-10-25
 ### Major changes
 

@@ -15,9 +15,10 @@ elif platform.system() ==  'Windows':
 
 from util.chat_prompt import ChatPrompt
 from util.translator import translate_output
+from util.custom_actions_window import CustomActionsWindow
 
 class MainWindow(QMainWindow):
-    """Main application window for the Mykros Framework."""
+    """Main application window for the Mykros framework."""
 
     show_signal = Signal()
 
@@ -69,6 +70,7 @@ class MainWindow(QMainWindow):
         self.tray_icon = QSystemTrayIcon(QIcon("icon.png"), self)
         self.tray_icon.setToolTip('Mykros framework')
         self.show_action = QAction('Show', triggered=self.show_chat_prompt)
+        self.custom_actions_action = QAction('Custom actions', triggered=self.show_custom_actions)
         self.about_action = QAction('About', triggered=self.show_about)
         self.quit_action = QAction('Quit', triggered=QApplication.instance().quit)
         self.tray_menu = QMenu()
@@ -138,5 +140,9 @@ class MainWindow(QMainWindow):
             self.move(center_x, center_y)
     def show_about(self):
         """Show an about window that shows the Mykros version."""
-        QMessageBox.about(self, "About Mykros", "Mykros framework\n Version: 0.2.1")
+        QMessageBox.about(self, "About Mykros", "Mykros framework\n Version: 0.2.2")
 
+    def show_custom_actions(self):
+        """Create and show the custom actions window."""
+        self.custom_actions_window = CustomActionsWindow(self)
+        self.custom_actions_window.show()
