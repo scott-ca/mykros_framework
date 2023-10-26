@@ -4,10 +4,17 @@ import sys
 import shutil
 import subprocess
 import logging
+import argparse
 
 logging.basicConfig(level=logging.DEBUG)
 
-print("Checking and updating model and intent information.")
+parser = argparse.ArgumentParser(description="Update data and re-train models automatically.")
+parser.add_argument('--auto', action='store_true', help='Run in auto mode, skipping confirmations')
+args = parser.parse_args()
+
+auto_mode = args.auto
+
+logging.debug(f"Checking and updating model and intent information.")
 
 # The path to the nlu folder and disabled_nlu_folder
 nlu_folder = 'data/nlu'
@@ -163,7 +170,14 @@ else:
     for file in model_files:
         print(file)
 
-    confirm = input("\nDo you want to delete these files to re-train the model with the enabled intents? (yes/no): ")
+
+    if auto_mode:
+        # Automatically confirm if in auto mode
+        confirm = 'yes'
+    
+    else:
+
+        confirm = input("\nDo you want to delete these files to re-train the model with the enabled intents? (yes/no): ")
 
     if confirm.lower() == 'yes' or confirm.lower() == 'y':
         print("Files deletion confirmed.")

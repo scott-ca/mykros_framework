@@ -99,15 +99,15 @@ class CustomActionsWindow(QMainWindow):
             QMessageBox.critical(self, "Error", f"An error occurred while restoring the file: {str(e)}")
 
     def trigger_retrain_and_restart(self):
+        """
+        Calls the restart_actions standalone script and the end the process for Mykros.
+        The restart_actions script will run update_data.py and then re-launch Mykros.
+        """
         try:
 
-            instructions = (
-                "The automatic retraining and restart feature is not yet implemented.\n\n"
-                "Please manually run the update_data script to retrain the model. "
-                "After the script completes, please restart Mykros."
-            )
-             
-            QMessageBox.information(self, "Feature Not Implemented.", instructions)
+            restart_script = './util/restart_actions.py'
+            subprocess.Popen(['python', restart_script])
+            sys.exit(0)
             
         except Exception as e:
             QMessageBox.critical(self, "Error", f"An unexpected error occurred: {str(e)}")

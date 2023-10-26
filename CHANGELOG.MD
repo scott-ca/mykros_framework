@@ -4,6 +4,15 @@ All notable improvements, changes, and fixes to Mykros will be documented in thi
 
 ## [Pre-release]
 
+## [0.2.3] - 2023-10-26
+### Minor changes
+
+- Added feature to the system tray context menu for custom actions. Once you updated the custom actions function, training data, or enabled/disabled actions you can now re-train the model from this menu as well. It will close Mykros and train the model, once it is complete it will automatically re-launch Mykros.
+
+You can still update all of the data and train the model via the old method, this just allows someone who does it via the GUI to train the model from the UI as well as have it automatically re-launch Mykros.
+
+-- Added the --auto flag to the update_data.py script and will also be passed along should it be launched from update_data.sh(linux) and update_data.bat(windows) should you run them with the --auto flag. In doing so it will auto-accept the prompt to replace any pre-existing models should one be found. 
+
 ## [0.2.2] - 2023-10-26
 ### Major changes
 

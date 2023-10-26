@@ -1,6 +1,9 @@
 @echo off
 cd %~dp0
 
+REM Capture all arguments for the batch script
+set args=%*
+
 set "INSTALL_DIR=%cd%\portable_env"
 set "CONDA_ROOT_PREFIX=%cd%\portable_env\conda"
 set "MINICONDA_DOWNLOAD_URL=https://repo.anaconda.com/miniconda/Miniconda3-py310_23.3.1-0-Windows-x86_64.exe"
@@ -37,4 +40,4 @@ call "%CONDA_ROOT_PREFIX%\Scripts\activate.bat" %CONDA_ROOT_PREFIX%
 echo Configuring Miniconda
 "%CONDA_ROOT_PREFIX%\Scripts\pip.exe" install -r requirements.txt --no-warn-script-location
 "%CONDA_ROOT_PREFIX%\Scripts\pip.exe" install -r custom_requirements.txt --no-warn-script-location
-"%CONDA_ROOT_PREFIX%\python.exe" update_data.py
+"%CONDA_ROOT_PREFIX%\python.exe" update_data.py %args%

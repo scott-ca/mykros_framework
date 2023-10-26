@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Capture all arguments for the shell script
+args="$@"
+
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
 if [[ "$(pwd)" =~ " " ]]; then echo This script relies on Miniconda which can not be silently installed under a path with spaces. && exit; fi
@@ -51,5 +54,4 @@ source $CONDA_ROOT_PREFIX/etc/profile.d/conda.sh && conda activate $CONDA_ROOT_P
 
 $CONDA_ROOT_PREFIX/bin/pip install -r requirements.txt
 $CONDA_ROOT_PREFIX/bin/pip install -r custom_requirements.txt
-$CONDA_ROOT_PREFIX/bin/python update_data.py
-
+$CONDA_ROOT_PREFIX/bin/python update_data.py $args
