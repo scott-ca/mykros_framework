@@ -209,11 +209,11 @@ class ChatPrompt(QLineEdit):
             # Used to control if the translated data goes to the custom_actions.
             translated_user_input = user_input
 
-            if settings['translation']['enable']:
-                    if settings['translation']['input_intent_detection'] or settings['translation']['all_input']:
+            if settings['translation']['enable'] is True:
+                    if settings['translation']['input_intent_detection'] is True or settings['translation']['all_input'] is True:
                         user_input = response['text']
                         user_input = replace_specialchar(user_input)
-                        if settings['translation']['all_input']:
+                        if settings['translation']['all_input'] is True:
                             translated_user_input = user_input
                 
 
@@ -758,10 +758,6 @@ def process_intents(nlu_data, intents, entities, user_input, regex_patterns, out
     logging.debug("End of found nonwords")
     logging.debug(entities_by_intent)
     logging.debug(entities_text)
-
-
-    # TODO Insert code for import/export detection below
-
 
     pending_actions = []
 

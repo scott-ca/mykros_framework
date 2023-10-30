@@ -1,13 +1,16 @@
 from PySide2.QtCore import Qt
-from PySide2.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QPushButton, QHBoxLayout, QTableWidget
+from PySide2.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QPushButton, QHBoxLayout, QTableWidget, QFileDialog
 from PySide2.QtWidgets import QTableWidgetItem, QAbstractItemView, QMessageBox, QTextEdit, QDialog, QApplication, QStyle
-
+from collections import OrderedDict
+import zipfile
+import tempfile
 import sys
 import os
 import yaml
 import subprocess
 import shutil
 import logging
+import re
 
 
 class CustomActionsWindow(QMainWindow):
@@ -33,14 +36,17 @@ class CustomActionsWindow(QMainWindow):
         self.view_action_button = QPushButton('View Custom Action')
         self.view_training_data_button = QPushButton('View Training Data')
         self.toggle_action_button = QPushButton('Enable/Disable')
-
         self.retrain_restart_button = QPushButton('Retrain Model and Restart')
         self.retrain_restart_button.clicked.connect(self.trigger_retrain_and_restart)
+        self.import_button = QPushButton('Import Custom Action')
+        self.export_button = QPushButton('Export Custom Action')
         
         # Connect buttons to functions
         self.view_action_button.clicked.connect(self.view_custom_action)
         self.view_training_data_button.clicked.connect(self.view_training_data)
         self.toggle_action_button.clicked.connect(self.toggle_action)
+        self.import_button.clicked.connect(self.import_custom_action)
+        self.export_button.clicked.connect(self.export_custom_action)
 
         # Set the column widths. These are arbitrary values and can be adjusted to your preference.
         self.table_widget.setColumnWidth(0, 150)  # Intent column
@@ -56,6 +62,8 @@ class CustomActionsWindow(QMainWindow):
         button_layout.addWidget(self.view_training_data_button)
         button_layout.addWidget(self.toggle_action_button)
         button_layout.addWidget(self.retrain_restart_button)
+        button_layout.addWidget(self.import_button)
+        button_layout.addWidget(self.export_button)
 
         main_layout.addLayout(button_layout)
 
@@ -66,6 +74,387 @@ class CustomActionsWindow(QMainWindow):
 
         # Populate the table widget with custom actions
         self.load_custom_actions()
+
+    def import_custom_action(self):
+        """
+        Used to import an intent and their respective action. This will include the custom_action, training data, and the intent_config, domain details.
+        It will open a dialog box and accept a zip file with the files in the structure of where the files normally reside.
+        """
+
+        # Step 1: Select and open the ZIP file
+        import_path, _ = QFileDialog.getOpenFileName(self, "Select the custom action Zip file", "", "Zip files (*.zip)")
+        if not import_path:
+            QMessageBox.warning(self, "No File Selected", "No file was selected.")
+            return
+
+        # Step 2: Extract to a temporary location
+        temp_dir = tempfile.mkdtemp()
+        with zipfile.ZipFile(import_path, 'r') as zip_ref:
+            zip_ref.extractall(temp_dir)
+
+        # Creates paths based on the expected structure
+        project_base_path = '.'
+        base_action_path = os.path.join(project_base_path, 'custom_actions')
+        base_training_path = os.path.join(project_base_path, 'data', 'nlu')
+        intent_config_path = os.path.join(project_base_path, 'intent_config.yml')
+
+        # Function to handle checking and copying files
+        def check_and_copy(source, destination, file_description):
+            # Create directories if they don't exist
+            os.makedirs(os.path.dirname(destination), exist_ok=True)
+
+            if os.path.exists(destination):
+                # Conflict detected: Prompt the user
+                choice = QMessageBox.question(self, "Conflict Detected",
+                                            f"The {file_description} already exists. Do you want to overwrite it?",
+                                            QMessageBox.Yes | QMessageBox.No,
+                                            QMessageBox.No)
+                if choice == QMessageBox.No:
+                    return False  # Skip this file
+
+            # Copy the file
+            shutil.copy2(source, destination)
+            return True
+
+        files_imported = 0
+        try:
+            # Check each file for conflicts, and copy over
+            for root, dirs, files in os.walk(temp_dir):
+                for file in files:
+                    full_file_path = os.path.join(root, file)
+                    rel_path = os.path.relpath(full_file_path, temp_dir)
+
+                    # Normalize the path to ensure cross-platform compatibility
+                    normalized_rel_path = os.path.normpath(rel_path)
+
+                    # Determine the destination path based on the normalized relative path
+                    if normalized_rel_path.startswith(os.path.normpath('custom_actions')):
+                        dest_path = os.path.join(base_action_path, os.path.relpath(normalized_rel_path, 'custom_actions'))
+                    elif normalized_rel_path.startswith(os.path.normpath('data/nlu')):
+                        dest_path = os.path.join(base_training_path, os.path.relpath(normalized_rel_path, 'data/nlu'))
+                    else:
+                        continue
+
+                    # Copy file, handle conflicts
+                    if check_and_copy(full_file_path, dest_path, file_description=file):
+                        files_imported += 1
+
+            # Handling 'intent_config.yml'
+            temp_intent_config = os.path.join(temp_dir, 'intent_config.yml')
+            if os.path.isfile(temp_intent_config):
+                with open(temp_intent_config, 'r') as temp_intent_stream:
+                    temp_intents = yaml.safe_load(temp_intent_stream)
+
+                with open(intent_config_path, 'r') as main_intent_stream:
+                    main_intents = yaml.safe_load(main_intent_stream) or {}
+
+                # Merge intents, prompt for overwrite if there's a conflict
+                updated_intents = main_intents.copy()
+                for intent_name, intent_data in temp_intents.items():
+                    if intent_name in main_intents:
+                        # Conflict: Prompt the user
+                        choice = QMessageBox.question(self, "Conflict Detected",
+                                                    f"The intent '{intent_name}' already exists in intent_config. Do you want to overwrite it?",
+                                                    QMessageBox.Yes | QMessageBox.No,
+                                                    QMessageBox.No)
+                        if choice == QMessageBox.No:
+                            continue  # Skip this intent
+
+                    # Add or update the intent
+                    updated_intents[intent_name] = intent_data
+
+                # Save back to 'intent_config.yml'
+                with open(intent_config_path, 'w') as main_intent_stream:
+                    first_entry = True
+                    for intent, data in updated_intents.items():
+                        yaml_content = yaml.dump({intent: data}, default_flow_style=False, sort_keys=False)
+
+                        # If it's not the first entry, we prepend a newline to separate the intents
+                        if not first_entry:
+                            yaml_content = '\n' + yaml_content
+                        else:
+                            first_entry = False
+
+                        main_intent_stream.write(yaml_content)
+
+
+            # Extracting new intent and action names after the merge
+            new_intent_names = list(updated_intents.keys())  # Extracting all the intent names
+
+            new_action_names = []
+            for intent_data in updated_intents.values():
+                if 'action' in intent_data:
+                    action_name = intent_data['action']
+                    if action_name not in new_action_names:
+                        new_action_names.append(action_name)
+
+            # Define the paths for domain files
+            temp_domain_path = os.path.join(temp_dir, 'domain.yml')
+            domain_path = os.path.join(project_base_path, 'domain.yml')
+
+            # Handle 'domain.yml' with the new intent and action names, as well as entities
+            if os.path.isfile(temp_domain_path):
+                with open(temp_domain_path, 'r') as temp_domain_stream:
+                    temp_domain_data = yaml.safe_load(temp_domain_stream)
+
+                with open(domain_path, 'r') as domain_stream:
+                    domain_data = yaml.safe_load(domain_stream) or {}
+
+                # Add new intents to the domain file if they don't exist
+                existing_intents = domain_data.get('intents', [])
+                for intent_name in new_intent_names:
+                    if intent_name not in existing_intents:
+                        existing_intents.append(intent_name)
+
+                # Add new actions to the domain if they don't exist
+                existing_actions = domain_data.get('actions', [])
+                for action_name in new_action_names:
+                    if action_name not in existing_actions:
+                        existing_actions.append(action_name)
+
+                domain_data['intents'] = existing_intents  # Updating with new intents list
+                domain_data['actions'] = existing_actions  # Updating with new actions list
+
+                # Handling entities from the imported 'domain.yml'
+                if 'entities' in temp_domain_data:
+                    temp_entities = temp_domain_data['entities']
+                    updated_entities = domain_data.get('entities', []).copy()
+
+                    # Check for entity conflicts
+                    for temp_entity in temp_entities:
+                        entity_name = temp_entity if isinstance(temp_entity, str) else list(temp_entity.keys())[0]
+
+                        # Search for the entity in the current domain file
+                        conflict = False
+                        for index, entity in enumerate(updated_entities):
+                            existing_entity_name = entity if isinstance(entity, str) else list(entity.keys())[0]
+
+                            if entity_name == existing_entity_name:
+                                conflict = True
+
+                                # Conflict: Prompt the user
+                                choice = QMessageBox.question(self, "Conflict Detected",
+                                                            f"The entity '{entity_name}' already exists in domain.yml. Do you want to overwrite it?",
+                                                            QMessageBox.Yes | QMessageBox.No,
+                                                            QMessageBox.No)
+                                if choice == QMessageBox.Yes:
+                                    updated_entities[index] = temp_entity  # Replace the entity with the imported one
+                                break
+
+                        if not conflict:
+                            # If no conflict was found, add the new entity
+                            updated_entities.append(temp_entity)
+
+                    domain_data['entities'] = updated_entities  # Updating with the new entities list
+
+                # Prepare data for dumping in the correct order
+                ordered_keys = ["version", "intents", "actions", "entities", "session_config"]
+                ordered_domain_data = {key: domain_data[key] for key in ordered_keys if key in domain_data}
+
+
+                # Serialize each section separately, as you've done before
+                yaml_sections = []
+                for key in ordered_keys:
+                    if key in domain_data:
+                        section_yaml = yaml.dump({key: domain_data[key]}, default_flow_style=False, sort_keys=False, indent=2, allow_unicode=True)
+                        yaml_sections.append(section_yaml)
+
+                full_yaml = '\n'.join(yaml_sections)
+
+                # Write the updated domain data back to 'domain.yml'
+                with open(domain_path, 'w') as domain_stream:
+                    domain_stream.write(full_yaml)
+
+            # Clean up the temporary directory
+            shutil.rmtree(temp_dir)
+
+            # Reload custom actions list in main window.
+            self.load_custom_actions()
+
+            # Inform the user of the import status
+            QMessageBox.information(self, "Import Successful", f"Custom action import completed. {files_imported} items were imported.")
+        except Exception as e:
+            # Removing temp directory
+            shutil.rmtree(temp_dir)
+            QMessageBox.critical(self, "Import Failed", f"An error occurred during the import: {str(e)}")
+
+
+    def export_custom_action(self):
+        """
+        Used to export an intent and their respective action. This will include the custom_action, training data, and the intent_config and domain details.
+        It will open a dialog box and take a file name and directory as an input of where to store the zip file.
+        """
+
+        # Get all selected rows
+        selected_rows = self.table_widget.selectionModel().selectedRows()
+        if not selected_rows:
+            QMessageBox.warning(self, "No Selection", "Please select one or more custom actions to export.")
+            return
+
+        # Variables for directories
+
+        script_dir = os.path.dirname(os.path.realpath(__file__))
+        base_action_dir = 'custom_actions'
+        base_training_dir = 'data/nlu'
+        action_folders = ["file_actions", "system_actions", "misc_actions", "web_actions", "word_actions"]
+
+        # Lists to store collective data
+        all_action_files = set()
+        all_training_data = set()
+        all_related_entities = set()
+        all_intent_configs = []
+
+        for index in selected_rows:
+            current_row = index.row()
+
+            # Retrieve the intent and action names from the table widget
+            intent_item = self.table_widget.item(current_row, 0)
+            intent_name = intent_item.text()
+
+            action_item = self.table_widget.item(current_row, 1)
+
+             # Trim the 'action_' prefix
+            action_name = action_item.text().replace('action_', '') 
+
+            # Initialize paths and lists for this specific action
+            action_files = set()
+            relative_action_paths = set()
+
+            # Check each folder for action files
+            for folder in action_folders:
+                folder_path = os.path.join(base_action_dir, folder, action_name)
+                if os.path.isdir(folder_path):
+                    for file in os.listdir(folder_path):
+                        file_path = os.path.join(folder_path, file)
+                        action_files.add((file_path, os.path.relpath(file_path, base_action_dir)))
+                    if action_files:
+                        break  
+
+            # Store action files in the main list
+            all_action_files.update(action_files)
+
+            # Construct the path for the training data and find the training file
+            training_data_path = None
+            relative_training_path = None
+            for subfolder in action_folders:
+                folder_path = os.path.join(base_training_dir, subfolder)
+                if os.path.isdir(folder_path):
+                    for file in os.listdir(folder_path):
+                        if file.endswith('.yml') and action_name in file:
+                            training_data_path = os.path.join(folder_path, file)
+                            relative_training_path = os.path.relpath(training_data_path, base_training_dir)
+                            break
+                    if training_data_path:
+                        break
+
+            # If a training data file was found, add it to the list
+            if training_data_path:
+                all_training_data.add((training_data_path, relative_training_path))
+
+            # Extract entities from this training data file
+            with open(training_data_path, 'r') as td_file:
+                td_content = yaml.safe_load(td_file)
+                for item in td_content['nlu']:
+                    if 'intent' in item and item['intent'] == intent_name:
+                        examples = item.get('examples', '').split('\n')
+                        for ex in examples:
+                            matches = re.findall(r'\[([^\]]+)\]\(([^\)]+)\)', ex)
+                            for _, entity in matches:
+                                all_related_entities.add(entity)
+                    
+            # Read the intent_config.yml and extract the specific intent's configuration
+            intent_config_content = None
+            with open('intent_config.yml', 'r') as stream:
+                try:
+                    documents = yaml.safe_load(stream)
+                    if intent_name in documents:
+                        intent_data = documents[intent_name]
+                        intent_config_content = yaml.dump({intent_name: intent_data}, default_flow_style=False, sort_keys=False)
+                except yaml.YAMLError as exc:
+                    QMessageBox.critical(self, "Error", f"An error occurred reading the intent_config.yml: {str(exc)}")
+                    return
+
+            if intent_config_content:
+                all_intent_configs.append((intent_name, intent_config_content))
+
+        # Extract the related entity details from domain.yml
+        domain_file_path = os.path.join(script_dir, 'domain.yml')
+        domain_entity_data = []
+        with open('domain.yml', 'r') as domain_file:
+            domain_content = yaml.safe_load(domain_file)
+            for entity_spec in domain_content.get('entities', []):
+                entity_name = entity_spec  
+                if isinstance(entity_spec, dict):
+
+                    entity_name = list(entity_spec.keys())[0]
+                    
+                # Check if the entity is in our list of related entities
+                if entity_name in all_related_entities:
+                    domain_entity_data.append(entity_spec)
+
+        # After gathering all necessary files and configurations, proceeds with the ZIP creation
+        try:
+            export_name = "multiple_intents" if len(selected_rows) > 1 else intent_name
+            export_path = QFileDialog.getSaveFileName(self, 'Save File', f"{export_name}.zip", "Zip files (*.zip)")
+            if export_path[0]:
+                with zipfile.ZipFile(export_path[0], 'w') as export_zip:
+                    # Adding custom action script(s) and training data
+                    for file_info in all_action_files:
+                        file_path, rel_path = file_info
+                        full_zip_action_path = os.path.join('custom_actions', rel_path)
+                        export_zip.write(file_path, full_zip_action_path)
+
+                    for data_info in all_training_data:
+                        data_path, rel_path = data_info
+                        full_zip_training_path = os.path.join('data', 'nlu', rel_path)
+                        export_zip.write(data_path, full_zip_training_path)
+
+                    if domain_entity_data:
+                        domain_content_str = yaml.dump({"entities": domain_entity_data}, default_flow_style=False, sort_keys=False)
+                        with tempfile.NamedTemporaryFile(mode='w+', delete=False) as temp_domain:
+                            temp_domain.write(domain_content_str)
+                            temp_domain_path = temp_domain.name
+                        export_zip.write(temp_domain_path, 'domain.yml')
+                        os.remove(temp_domain_path)  # Clean up the temp file
+
+                    # Combine all intent configurations into one content
+                    combined_intent_config = {}
+                    for intent_info in all_intent_configs:
+                        intent_name, intent_content = intent_info
+                        # Parses the individual YAML content back to a dictionary and merges it.
+                        intent_data = yaml.safe_load(intent_content)
+                        combined_intent_config.update(intent_data)
+
+                    # Dump all intent data into one YAML configuration
+                    if combined_intent_config:
+                        all_intents_content = yaml.dump(combined_intent_config, default_flow_style=False, sort_keys=False)
+
+                        # Split the content of the YAML by newlines and add an extra newline for each top-level item
+                        adjusted_content_lines = []
+                        first_item = True  
+                        for line in all_intents_content.split('\n'):
+                            if line.endswith(':') and not line.startswith('  '):
+                                if not first_item:
+                                    adjusted_content_lines.append('')  
+                                else:
+                                    first_item = False
+                            adjusted_content_lines.append(line)
+
+                        # Join everything back together into a single string with the added newlines
+                        adjusted_content = '\n'.join(adjusted_content_lines)
+
+                        with tempfile.NamedTemporaryFile(mode='w+', delete=False) as temp_config:
+                            temp_config.write(adjusted_content)  
+                            temp_config_path = temp_config.name
+
+                        export_zip.write(temp_config_path, 'intent_config.yml')
+                        os.remove(temp_config_path)  # Clean up the temp file
+
+                QMessageBox.information(self, "Export Successful", f"Custom actions have been exported successfully.")
+            else:
+                QMessageBox.warning(self, "Export Cancelled", "The export operation was cancelled.")
+        except Exception as e:
+            QMessageBox.critical(self, "Export Failed", f"An error occurred during export: {str(e)}")
 
     def save_file(self, file_path, content):
         try:
@@ -100,7 +489,7 @@ class CustomActionsWindow(QMainWindow):
 
     def trigger_retrain_and_restart(self):
         """
-        Calls the restart_actions standalone script and the end the process for Mykros.
+        Calls the restart_actions standalone script and the ends the main Mykros script.
         The restart_actions script will run update_data.py and then re-launch Mykros.
         """
         try:
@@ -139,14 +528,12 @@ class CustomActionsWindow(QMainWindow):
             details_item = QTableWidgetItem(intent_info.get('details', ''))
             enabled_item = QTableWidgetItem('Enabled' if intent_info.get('enabled', False) else 'Disabled')
 
-
             # Set the items as non-editable
             intent_item.setFlags(intent_item.flags() & ~Qt.ItemIsEditable)
             action_item.setFlags(action_item.flags() & ~Qt.ItemIsEditable)
             summary_item.setFlags(summary_item.flags() & ~Qt.ItemIsEditable)
             details_item.setFlags(details_item.flags() & ~Qt.ItemIsEditable)
             enabled_item.setFlags(enabled_item.flags() & ~Qt.ItemIsEditable)
-
 
             # Add the items to the table
             self.table_widget.setItem(current_row, 0, intent_item)
@@ -250,7 +637,6 @@ class CustomActionsWindow(QMainWindow):
             dialog.exec_()
         else:
             print(f"File for action '{action_name}' not found.")
-
 
     def view_training_data(self):
         """

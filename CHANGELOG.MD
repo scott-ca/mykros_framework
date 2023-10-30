@@ -4,6 +4,15 @@ All notable improvements, changes, and fixes to Mykros will be documented in thi
 
 ## [Pre-release]
 
+## [0.2.4] - 2023-10-29
+### Minor changes
+
+- Added functionality to import and export custom action functions, training data, and intent_config data, respective domain entity data for intents. This can be done with a single intent or multiple intents at the same time. In addition, should there be duplicates of any of the custom action function files or training data you will be prompted to if you want to overwrite it. You will also get a similar prompt if the intent information already exists in the intent_config.yml file and the entity data in the domain file prompting if you wish to overwrite the data.
+
+Currently should the custom action function require any libraries not already installed, you will need to install the missing libraries into the portable conda enviroment manually. However, this functionality is currently being worked on to be automatically done when you import/export custom actions.
+
+- Fixed a bug that caused the enabled(true)/disabled(false) translation setting in the settings.yml file to default to true if an invalid value was detected instead of defaulting to false.
+
 ## [0.2.3] - 2023-10-26
 ### Minor changes
 

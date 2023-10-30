@@ -106,15 +106,15 @@ import argostranslate.translate
 
 
 # Checks and ensures any needed models used for input translation are downloaded.
-if config['translation']['enable']:
-    if config['translation']['input_intent_detection'] or config['translation']['all_input']:
+if config['translation']['enable'] is True:
+    if config['translation']['input_intent_detection']  is True or config['translation']['all_input'] is True:
         from_code = config['translation']['from_language']
         to_code = config['translation']['to_language']
         ensure_models_available(from_code, to_code)
 
 # Checks and ensures any needed models used for output translation are downloaded. It reverses the to/from languages for the use with the message output.
-if config['translation']['enable']:
-    if config['translation']['all_output']:
+if config['translation']['enable'] is True:
+    if config['translation']['all_output'] is True:
         from_code = config['translation']['to_language']
         to_code = config['translation']['from_language']
         ensure_models_available(from_code, to_code)
@@ -133,8 +133,8 @@ def translate_message(message):
     """
 
     # Check if translation is enabled in the config
-    if config['translation']['enable']:
-        if config['translation']['input_intent_detection'] or config['translation']['all_input']:
+    if config['translation']['enable'] is True:
+        if config['translation']['input_intent_detection']  is True or config['translation']['all_input'] is True:
             from_code = config['translation']['from_language']
             to_code = config['translation']['to_language']
 
@@ -169,8 +169,8 @@ def translate_output(message):
         Message: Either the translated message, or the original message if no translation was required.
     """
 
-    if config['translation']['enable']:
-        if config['translation']['all_output']:
+    if config['translation']['enable'] is True:
+        if config['translation']['all_output'] is True:
             from_code = config['translation']['to_language']
             to_code = config['translation']['from_language']
 
