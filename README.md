@@ -9,7 +9,9 @@
 * [Roadmap](#roadmap)
 * [Installation instructions](#installation-instructions)
 * [Running Mykros](#running-mykros)
-* [Adding custom actions](#adding-custom-actions)
+* [Convert pre-existing python code to custom actions](#convert-pre-existing-python-code-to-custom-actions)
+* [Adding custom actions](#detailed-breakdown-and-advanced-features-for-adding-custom-actions)
+* [Exporting and importing custom actions](#exporting-and-importing-custom-actions)
 * [License](#license)
 
 List of the most recent changes and updates can be found in the [CHANGELOG](https://github.com/scott-ca/mykros_framework/blob/main/CHANGELOG.MD)
@@ -18,9 +20,13 @@ List of the most recent changes and updates can be found in the [CHANGELOG](http
 
 Mykros is an open sourced portable AI assistant framework, offering compatibility with both Windows and Linux and can even be run directly from a USB drive. Designed to streamline your daily workflow using natural language, and improving efficiency and productivity with your day-to-day tasks.
 
+You can also easily convert your pre-existing python code into custom actions to be used with the framework. This not only makes your code more accessible but also enhances its flexibility, as you can integrate it with other custom actions. These custom actions, along with their respective training data and necessary configurations, can be exported and imported to sharing with others.
+
 The Mykros framework also provides the flexibility to interact with models using your native language even if the model was trained on data in another language. You are also able interact with custom actions that were created in another languages. 
 
 The Mykros framework utilizes the Rasa model for intent and entity detection while internalizing dialog and action management. By managing conversations and actions internally, Mykros eliminates the need for an external action server. This allows Mykros to reduce complexity, add functionality, increase flexibility and performance, and increase accuracy while only needing small amounts of training data.
+
+Mykros is designed to be lightweight requiring approximately 1.3GB of RAM and 3.5GB of diskspace. The model is also lightweight; even with 30 intents and their respective training data, the model size remains under 40 MB. The framework and model are designed to run efficiently as well requiring only your CPU, making it a good option even for lower-end hardware configurations and running along side other applications that may otherwise require those resources.
 
 By combining the strengths of the Mykros framework and the lightweight Rasa model, Mykros delivers a powerful and modular user friendly AI assistant solution.
 
@@ -37,7 +43,7 @@ While everyone has different privacy requirements, it is important to know what 
 ### Lightweight and efficient resource usage
 New technology and tools should be accessible to everyone. While typically most advancements will require newer hardware, that doesn't mean we shouldn't strive for technology and tools that don't require cutting edge hardware. 
 
-Mykros is optimized for resource efficiency, requiring approximately 1GB of RAM and 3.5GB of diskspace. The model is also lightweight; even with 30 intents and their respective training data, the model size remains under 40 MB. The model has been designed to run efficiently even on devices without a dedicated GPU, making it a good option even for lower-end hardware configurations and running along side other applications that may otherwise require those resources. Mykros has been tested on high end hardware, low end virtual machines, and low end hardware while retaining the same functionality. 
+Mykros is optimized for resource efficiency, requiring approximately 1.3GB of RAM and 3.5GB of diskspace. The model is also lightweight; even with 30 intents and their respective training data, the model size remains under 40 MB. The model has been designed to run efficiently even on devices without a dedicated GPU, making it a good option even for lower-end hardware configurations and running along side other applications that may otherwise require those resources. Mykros has been tested on high end hardware, low end virtual machines, and low end hardware while retaining the same functionality. 
 
 Mykros can also be run from a USB drive allowing you to use it between multiple devices and operating systmes with ease.
 
@@ -468,14 +474,166 @@ Should you wish too add your custom actions that is supported as well.
 
 ## Adding custom actions
 
+
 Custom actions can be easily integrated into Mykros. This involves creating a custom function, adding a small subset of training data to trigger the action, and update 2 configuration files and then running update_data.py.
 
 To create a custom action you need create an intent and an action. In most cases you would have a single intent and a single action. However, you aren't restricted to that if your requirements are different.
 
 You can assign multiple intents to the same action if you wish. Alternatively, you can also have a single or multiple entities tied to a single intent. They can also be shared between intents, however it is generally recommended to have a unique entity for each intent that requires an entity to ensure it is extracted how you expect.
 
+We will use a quick example of how to intergrate some existing python script that you may already have. We then go more into detail on what each part means as well as some more advanced options that you may wish to utilize.
+
+&#x200B;
+
+### Convert pre-existing python code to custom actions
+
+Converting existing python code to custom actions is quick and easy. All you need to do is change how the input and output interfaces with the user, create training data, and update two config files. Then you can train your model and your done.
+
+So let's say you have a simple script shown below to prompt a user for something to search on wikipedia.
+
+&#x200B;
+
+**Original script**
+
+&#x200B;
+
+    wiki_query = input("Enter your value: ")
+    
+    wiki_page = wiki_query.replace(" ", "_")
+    
+    response = requests.get(f"https://en.wikipedia.org/wiki/{wiki_page}")
+    if response.status_code == 200:
+        webbrowser.open_new_tab(f"https://en.wikipedia.org/wiki/{wiki_page}")
+    else:
+        wiki_search = wiki_query.replace(" ", "+")
+        webbrowser.open_new_tab(f"https://en.wikipedia.org/w/index.php?search={wiki_search}&title=Special:Search&profile=advanced&fulltext=1&ns0=1")
+    print(f"Here are the Wikipedia search results for '{wiki_query}'")
+
+
+**Converted script**
+
+We wrap it in an execution function, switch the input statement to extracting the information via entities from the user input, and change the print statement to an output widget statement and then that is all that is needed for converting the python code. Then we can move onto creating the training data.
+
+
+    from util.misc import request_additional_info
+    
+    def search_wiki_execution(output_widget, entities, chat_prompt):
+    
+        if "wiki_query" in entities:
+            wiki_query = entities.get("wiki_query")
+        else:
+            wiki_query = request_additional_info(chat_prompt, "Enter the what you would like to search on Wikipedia:")
+    
+            if wiki_query is None:
+                output_widget.append("Wiki search operation canceled.")
+                return
+    
+        wiki_page = wiki_query.replace(" ", "_")
+        response = requests.get(f"https://en.wikipedia.org/wiki/{wiki_page}")
+        if response.status_code == 200:
+            webbrowser.open_new_tab(f"https://en.wikipedia.org/wiki/{wiki_page}")
+        else:
+            wiki_search = wiki_query.replace(" ", "+")
+            webbrowser.open_new_tab(f"https://en.wikipedia.org/w/index.php?search={wiki_search}&title=Special:Search&profile=advanced&fulltext=1&ns0=1")
+        output_widget.append(f"AI: Here are the Wikipedia search results for '{wiki_query}'")
+
+**Training data**
+
+You create approximately 20 examples for training data and optionally add keywords to increase detection of the intent.
+
+    version: "3.1"
+    
+    nlu:
+    
+    - intent: search_wiki
+      examples: |
+        - wiki [world war II](wiki_query)
+        - wiki [Anne Perry](wiki_query)
+        - wiki [deaths in 2023](wiki_query)
+        - wiki [Keanu Reeves](wiki_query)
+        - wiki [lord of the rings](wiki_query)
+        - wiki [dog breeds](wiki_query)
+        - search wiki for [wind instrument](wiki_query)
+        - look up [cat breeds](wiki_query) on wiki
+        - wiki [Penguin Books](wiki_query)
+        - wikipedia [world war II](wiki_query)
+        - wikipedia [Anne Perry](wiki_query)
+        - wikipedia [deaths in 2023](wiki_query)
+        - wikipedia [Keanu Reeves](wiki_query)
+        - wikipedia [lord of the rings](wiki_query)
+        - wikipedia [dog breeds](wiki_query)
+        - Can you search wiki for [history of the internet](wiki_query)
+        - Can you search wiki [history of the internet](wiki_query)
+        - search wikipedia for [wind instrument](wiki_query)
+        - look up [cat breeds](wiki_query) on wikipedia
+        
+    - regex: search_wiki_keywords
+      examples: |
+        - wiki|search|look up|find|lookup|wikipedia
+     ​ ​ ​
+
+&#x200B;
+
+Optionally you can also use regex to overwrite the default extraction of entities. In most cases you wouldn't need to or want to add any regex for the entity. However, the option is there should you wish to have that flexibility and control. So for example, if you have an intent for running commands in the terminal you may wish to capture all text after a certain word and have that take priority, and if that is what is needed then you can do that. If you do, you would add in something similar to regex below into the training data. Otherwise, as long as the entity is tagged in the training data that should be sufficient.
+
+    - regex: terminal_command
+      examples: |
+        - (?<=terminal\s).*
+
+**Config files**
+
+You need to update two config files. Your domain.yml and intent\_config.yml. You just append your data to the existing file.
+
+In the domain file you just add the name of your intent, action, and any entities that need to be extracted if there is any.
+
+**domain.yml**
+
+    version: "3.1"
+    
+    intents:
+      - DEBUG_MODE
+      - search_wiki
+    
+    actions:
+      - action_debug
+      - action_search_wiki
+    
+    entities:
+      - wiki_query
+    
+    session_config:
+      session_expiration_time: 60
+      carry_over_slots_to_new_session: true
+
+**intent\_config.yml**
+
+In the intent\_config.yml file you enter your intent name, action name, summary and details of what the intent does, and the enabled/disabled status.
+
+    DEBUG_MODE:
+      action: action_debug
+      summary: Used to test or debug actions.
+      details: This intent is used to test or debug actions.
+      enabled: false
+    
+    search_wiki:
+      action: action_search_wiki
+      summary: Search for information on Wikipedia.
+      details: This intent is used to search for information on Wikipedia and retrieve
+        relevant articles.
+      enabled: true
+
+That's it. You just need to run update\_data.py to re-train your model, or use the option within the custom actions gui. Once your model has been re-trained you will now have access to the new custom action along with any others you have enabled or added previously.
+
+
+&#x200B;
+&#x200B;
+
+### Detailed breakdown and advanced features for adding custom actions
+
+
 Here is a breakdown of the components involved in creating custom actions:
 
+&#x200B;
 
 **Intent(required):** The intent represents the desired action the user wants to perform. For instance, intents could be "search_google", "open_app", or "translate_webpage". Each intent is associated with a specific functionality or behavior.
 
@@ -729,8 +887,7 @@ Below is the optional entity configuration.
   examples: |
     - (?<=terminal\s).*
 ```
-###Adds the non_word_flag to an entity. When enabled for an entity then if no entity is detected in the initial input, the intent that is the closest that uses the entity will assign the closest non-word. This is useful for detection of non-word names which are often used for company names or names of software**
-
+### Adds the non_word_flag to an entity. When enabled for an entity then if no entity is detected in the initial input, the intent that is the closest that uses the entity will assign the closest non-word. This is useful for detection of non-word names which are often used for company names or names of software**
 
 ### Assigns the closest non-word
 ```
@@ -813,7 +970,31 @@ This will enable/disable the various intents based on the information in the int
 
 In the current implementation of intent linking, it operates as an all-or-nothing approach for any specific instance of user input. So if your user input contains 3 intents they all need to use the linking functionality or none of them need to. This will be updated in the future to allow a mixture of linking and non-linking. You can mix and match intents that offer and don't offer the functionality, just the usage is restricted to all of the intents or none of the intents in any given user input.
 
+&nbsp;
 
+## Exporting and importing custom actions
+
+To share your intents and custom actions or to add ones created by others, you can utilize the built-in export and import feature within the custom actions menu. You can export and import both single and multiple intents and custom actions with this feature. You can access this menu by:
+
+1.Right-clicking the book icon in your system tray (typically near the clock).
+
+2.Selecting "Custom actions".
+
+You'll be presented with a screen similar to the one below showing all installed intents and custom actions. From this screen, they can back up or edit both their custom actions and training data. You can also disable or enable any intents without needing to delete the data. Please note, you need at least 2 enabled intents to be able to train the model.
+
+&nbsp;
+
+<img src="https://github.com/scott-ca/mykros_assist/assets/59944183/59e0f74c-7822-40b0-9fe2-1b4a26f52b69" width="800" height="500">
+
+&nbsp;
+
+When you export, it will create a zip file that will include the custom action function, training data, intent_config data, and respective domain entity data, and any required non-standard python libraries. 
+
+When you import, the zip file will extract and update any required files. If when you're importing the data there are duplicates of any of the custom action function files or training data you will be prompted to see if you want to overwrite the existing files. You will also get a similar prompt if the intent information already exists in the intent_config.yml file or the entity data in the domain file prompting if you wish to overwrite the data. The custom_action_libraries.txt file within the zip file will act as a requirements file. It will install any missing libraries, maintaining the versions in environment they were originally exported from. 
+
+After importing, click "Retrain Model and Restart". This will close Mykros, retrain the model with the new data, and then restart Mykros.
+
+&nbsp;
 
 ## Feedback
 
@@ -875,3 +1056,4 @@ The Rasa project can be found here: https://github.com/RasaHQ/rasa/
 **Pyside2:** This library is used for the GUI component of Mykros and the project can be found here: https://download.qt.io/official_releases/QtForPython/
 
 **Argos Translate** This library is used for language translations and is used to translate the user input to the language used in the model, training data, custom action allowing them to interact with these functions using their native language. The project can be found here https://github.com/argosopentech/argos-translate
+

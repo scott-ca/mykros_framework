@@ -12,6 +12,10 @@ import shutil
 import logging
 import re
 
+import ast
+import sys
+import subprocess
+from importlib_metadata import distribution, Distribution, version
 
 class CustomActionsWindow(QMainWindow):
     def __init__(self, parent=None):
@@ -265,6 +269,19 @@ class CustomActionsWindow(QMainWindow):
                 with open(domain_path, 'w') as domain_stream:
                     domain_stream.write(full_yaml)
 
+
+                libraries_file_path = os.path.join(temp_dir, 'custom_action_libraries.txt')
+                print(libraries_file_path)
+                if os.path.exists(libraries_file_path):
+                    missing_libraries = install_from_file(libraries_file_path)
+                    if missing_libraries:
+                        QMessageBox.warning(self, "Library Installation", "Failed to install the following libraries:\n\n" + '\n'.join(missing_libraries) + "\n\nYou might need to manually install them.")
+
+                    else:
+                        QMessageBox.information(self, "Library Installation", "All libraries were installed successfully.")
+                    
+            
+
             # Clean up the temporary directory
             shutil.rmtree(temp_dir)
 
@@ -292,7 +309,6 @@ class CustomActionsWindow(QMainWindow):
             return
 
         # Variables for directories
-
         script_dir = os.path.dirname(os.path.realpath(__file__))
         base_action_dir = 'custom_actions'
         base_training_dir = 'data/nlu'
@@ -392,12 +408,66 @@ class CustomActionsWindow(QMainWindow):
                 if entity_name in all_related_entities:
                     domain_entity_data.append(entity_spec)
 
+
+
+        all_imported_libraries = set()
+        for file_info in all_action_files:
+            file_path, _ = file_info
+            imported_libraries_for_file = imports_from_action(file_path)
+            all_imported_libraries.update(imported_libraries_for_file)
+
+
+        # List of known custom modules in the 'util' folder
+        custom_util_modules = [
+            "chat_prompt", "main_window", "translator", "custom_actions_window",
+            "misc", "rasa_model", "model", "restart_actions"
+        ]
+        
+        known_builtins = ['sys']
+        known_builtins.extend(['util', 'PySide2'])
+
+        # Using the filtered_libraries logic from the provided script to filter libraries
+        filtered_libraries = [
+            lib for lib in all_imported_libraries
+            if not is_standard_lib(lib)
+            and lib not in known_builtins
+            and "util." + lib not in custom_util_modules
+        ]
+
+        installed_libs = pip_list()
+
+        # Step 3: Write the missing libraries to a custom_action_libraries.txt file
+        with tempfile.NamedTemporaryFile(mode='w+', delete=False) as temp_libs:
+            for lib in filtered_libraries:
+                found = False
+
+                # Directly match against installed packages
+                if lib in installed_libs:
+                    temp_libs.write(f"{lib}=={installed_libs[lib]}\n")
+                    found = True
+                else:
+                    # Check against top-level modules
+                    for installed_lib, version in installed_libs.items():
+                        if lib in top_level_modules_for_package(installed_lib):
+                            temp_libs.write(f"{installed_lib}=={version}\n")
+                            found = True
+                            break
+
+                if not found:
+                    temp_libs.write(f"# {lib} is not installed. Couldn't determine the version.\n")
+
+            temp_libs_path = temp_libs.name
+
+
         # After gathering all necessary files and configurations, proceeds with the ZIP creation
         try:
             export_name = "multiple_intents" if len(selected_rows) > 1 else intent_name
             export_path = QFileDialog.getSaveFileName(self, 'Save File', f"{export_name}.zip", "Zip files (*.zip)")
             if export_path[0]:
                 with zipfile.ZipFile(export_path[0], 'w') as export_zip:
+
+                    export_zip.write(temp_libs_path, 'custom_action_libraries.txt')
+
                     # Adding custom action script(s) and training data
                     for file_info in all_action_files:
                         file_path, rel_path = file_info
@@ -794,3 +864,60 @@ class CustomActionsWindow(QMainWindow):
 
         # Update the table to reflect the change
         self.load_custom_actions()
+
+
+def imports_from_action(file_path):
+    """Extract all imported libraries from a Python file."""
+    with open(file_path, 'r') as file:
+        node = ast.parse(file.read())
+    
+    libraries = []
+    for item in ast.walk(node):
+        if isinstance(item, ast.Import):
+            for n in item.names:
+                libraries.append(n.name.split('.')[0])
+        elif isinstance(item, ast.ImportFrom):
+            libraries.append(item.module.split('.')[0])
+    
+    return list(set(libraries))
+
+def is_standard_lib(module_name):
+    try:
+        module = __import__(module_name)
+        return "lib" in module.__file__ and "site-packages" not in module.__file__
+    except Exception:
+        return False
+
+def pip_list():
+    installed_libraries = {}
+    result = subprocess.run(['pip', 'freeze'], capture_output=True, text=True)
+    for line in result.stdout.split('\n'):
+        if '==' in line:
+            lib, ver = line.split('==')
+            installed_libraries[lib] = ver
+    return installed_libraries
+
+
+def top_level_modules_for_package(package_name):
+    dist = distribution(package_name)
+    if dist and dist.read_text('top_level.txt'):
+        return list(dist.read_text('top_level.txt').splitlines())
+    return []
+
+
+def install_from_file(file_path):
+    """Install libraries from a requirements file and return a list of those that failed."""
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
+
+    missing_libraries = []
+
+    for line in lines:
+        line = line.strip()
+        # Ignore commented lines
+        if not line.startswith("#"):
+            result = subprocess.run(['pip', 'install', line], capture_output=True, text=True)
+            if result.returncode != 0:  # if the return code is non-zero, installation failed
+                missing_libraries.append(line)
+
+    return missing_libraries

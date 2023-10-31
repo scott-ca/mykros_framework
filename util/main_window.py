@@ -140,7 +140,7 @@ class MainWindow(QMainWindow):
             self.move(center_x, center_y)
     def show_about(self):
         """Show an about window that shows the Mykros version."""
-        QMessageBox.about(self, "About Mykros", "Mykros framework\n Version: 0.2.4")
+        QMessageBox.about(self, "About Mykros", "Mykros framework\n Version: 0.2.5")
 
     def show_custom_actions(self):
         """Create and show the custom actions window."""

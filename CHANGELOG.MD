@@ -4,6 +4,11 @@ All notable improvements, changes, and fixes to Mykros will be documented in thi
 
 ## [Pre-release]
 
+## [0.2.5] - 2023-10-30
+### Minor changes
+
+- Added additional functionality to the export and import function. When exporting custom actions, Mykros creates a text file within the zip that lists any required non-standard libraries that were imported in the custom action function, along with their versions from the current environment being run. During import of the custom action, this file is treated as a requirements file, ensuring that the specific versions of these libraries are installed in the enviroment.
+
 ## [0.2.4] - 2023-10-29
 ### Minor changes
 
