@@ -4,6 +4,17 @@ All notable improvements, changes, and fixes to Mykros will be documented in thi
 
 ## [Pre-release]
 
+## [0.2.6] - 2023-1-01
+### Minor changes
+
+- Resolved an issue where disabled intents could still be detected even though they couldn't be triggered if they shared training data with an enabled intent that uses the same custom action function. Instead of getting the most likely intent for your intent, you may get an error because it would try to process a disable intent.
+
+In most cases, each intent possesses unique custom action functions and training data. When such intents are disabled, their data isn't used to train the model. In those cases you get no error as the model doesn't have any data on how to trigger those intents and thus wouldn't  be able to detect the intent.
+
+As a result of this bugfix, the rare instances where multiple intents share a custom action function and training data, only the enabled intents will now be considered, ensuring both disabled intents and non-existant intents are effectively omitted even if they were present in the training data. Allowing you to instead get the highest confidence score intent versus the error you would previously recieved.
+
+This also means, you can now have someone export intents that share custom action functions and training data without getting an error just because they didn't export all of the intents that use that shared custom action function and training data.
+
 ## [0.2.5] - 2023-10-30
 ### Minor changes
 

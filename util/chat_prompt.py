@@ -37,6 +37,9 @@ for intent_name in intent_info.keys():
     # Assign the action to the corresponding intent in the dictionary
     actions[intent_name] = action_key
 
+print("intent info:\n")
+print(intent_info)
+
 class ChatPrompt(QLineEdit):
     """A custom QLineEdit widget for handling user input in the chat prompt."""
 
@@ -199,6 +202,13 @@ class ChatPrompt(QLineEdit):
             response = rasa_model.message(user_input)
             
             intent_ranking = response["intent_ranking"]
+
+            logging.debug(f"Intents prior to disabled filtering shared actions:\n {intent_ranking}")
+
+            # Filter out intents that are not enabled in the intent_config.yml
+            intent_ranking = [intent for intent in intent_ranking if intent["name"] in intent_info]
+
+            logging.debug(f"Intents after disabled filtering shared actions:\n {intent_ranking}")
 
             logging.debug(response)
 
