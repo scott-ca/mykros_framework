@@ -264,7 +264,7 @@ print("Files 'rules.yml' and 'stories.yml' configuration created successfully.")
 print("Training the rasa model")
 
 # Command to run Rasa
-rasa_command = ['rasa', 'train']
+rasa_command = ['rasa', 'train', 'nlu']
 
 # Run Rasa and capture the output live
 process = subprocess.Popen(rasa_command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)

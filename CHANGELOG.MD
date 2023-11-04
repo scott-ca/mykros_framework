@@ -4,6 +4,11 @@ All notable improvements, changes, and fixes to Mykros will be documented in thi
 
 ## [Pre-release]
 
+## [0.2.7] - 2023-1-04
+### Minor changes
+
+- Minimal set of dialog management was initially being trained on the rasa model, even though it wasn't being used. Since it is only being used for NLU and not any dialog management, it has been updated to be trained only for the NLU portion. This has reduced the ram usage while the model is loaded by Mykros by approximately 10%.
+
 ## [0.2.6] - 2023-1-01
 ### Minor changes
 
